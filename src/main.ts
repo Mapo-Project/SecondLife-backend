@@ -20,6 +20,7 @@ if (dev) {
       httpsOptions,
       cors: true,
     });
+    app.enableCors();
 
     const config = new DocumentBuilder()
       .addBearerAuth()
@@ -41,6 +42,7 @@ if (dev) {
     const app = await NestFactory.create(AppModule, {
       cors: true,
     });
+    app.enableCors();
 
     const config = new DocumentBuilder()
       .addBearerAuth()
