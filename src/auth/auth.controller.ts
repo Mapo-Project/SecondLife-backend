@@ -66,9 +66,34 @@ export class AuthController {
   })
   @UseGuards(AuthGuard('kakao'))
   async kakaoCallBack(@Req() req, @Res() res) {
-    const user = await this.authService.kakaoCallBack(req.user as UserDto);
+    const user = await this.authService.loginCallBack(req.user as UserDto);
     this.logger.log(`카카오 로그인 성공 user_id: ${req.user.user_id}`);
 
+    return res.redirect(
+      `${process.env.FRONT_URL}?user=${JSON.stringify(user)}`,
+    );
+  }
+
+  @Get('google')
+  @ApiOperation({
+    summary: '구글 로그인',
+    description: `구글 로그인 페이지로 이동 합니다.`,
+  })
+  @HttpCode(200)
+  @UseGuards(AuthGuard('google'))
+  async googleAuth() {
+    return HttpStatus.OK;
+  }
+
+  @Get('google/callback')
+  @ApiOperation({
+    summary: '구글 로그인 콜백',
+    description: '구글 로그인시 콜백 라우터입니다.',
+  })
+  @UseGuards(AuthGuard('google'))
+  async googleCallBack(@Req() req, @Res() res) {
+    const user = await this.authService.loginCallBack(req.user as UserDto);
+    this.logger.log(`구글 로그인 성공 user_id: ${req.user.user_id}`);
     return res.redirect(
       `${process.env.FRONT_URL}?user=${JSON.stringify(user)}`,
     );

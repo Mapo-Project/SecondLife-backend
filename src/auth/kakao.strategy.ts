@@ -5,8 +5,6 @@ import { UserDto } from './dto/user.dto';
 export class KakaoStrategy extends PassportStrategy(Strategy) {
   constructor() {
     super({
-      // clientID: process.env.KAKAO_CLIENTID_LOCAL,
-      // callbackURL: process.env.KAKAO_CALLBACKURL_LOCAL,
       clientID: process.env.KAKAO_CLIENTID,
       callbackURL: process.env.KAKAO_CALLBACKURL,
     });

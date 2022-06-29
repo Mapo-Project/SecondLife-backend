@@ -7,8 +7,8 @@ import { UserDto } from './dto/user.dto';
 export class AuthService {
   constructor(private jwtService: JwtService) {}
 
-  async kakaoCallBack(userKakaoDto: UserDto) {
-    const { user_id, name, method, email, profile_img } = userKakaoDto;
+  async loginCallBack(userDto: UserDto) {
+    const { user_id, name, method, email, profile_img } = userDto;
     const verify = 'N';
     const status = 'P';
     const type = 'G';
@@ -16,7 +16,7 @@ export class AuthService {
     if (!name) {
       return Object.assign({
         statusCode: 400,
-        message: '카카오 로그인 실패',
+        message: '로그인 실패',
       });
     }
 
@@ -52,7 +52,7 @@ export class AuthService {
 
       return Object.assign({
         statusCode: 200,
-        message: '카카오 로그인 성공',
+        message: '로그인 성공',
         verify: verify,
         accessToken: accessToken,
         refreshToken: refreshToken,
@@ -69,7 +69,7 @@ export class AuthService {
 
     return Object.assign({
       statusCode: 200,
-      message: '카카오 로그인 성공',
+      message: '로그인 성공',
       verify: user_verify.verify,
       accessToken: accessToken,
       refreshToken: refreshToken,
