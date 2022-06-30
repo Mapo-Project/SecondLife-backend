@@ -1,6 +1,5 @@
 export class UserDto {
-  user_id: string;
-  name: string;
+  social_id: string;
   method: string;
   email: string;
   profile_img: string;

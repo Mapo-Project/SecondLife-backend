@@ -14,10 +14,9 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     });
   }
 
-  async validate(accessToken, refreshToken, profile, done) {
+  async validate(accessToken, refreshToken, profile: any, done) {
     const payload: UserDto = {
-      user_id: profile.id,
-      name: profile.displayName,
+      social_id: `${profile.id}`,
       method: 'google',
       email: profile.emails[0].value,
       profile_img: profile.photos[0].value,
