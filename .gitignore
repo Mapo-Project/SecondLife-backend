@@ -1,5 +1,4 @@
 .env
-/src/user
 /upload
 # compiled output
 /dist
