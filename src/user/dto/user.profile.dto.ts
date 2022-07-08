@@ -3,11 +3,11 @@ import { IsEmail, IsNotEmpty } from 'class-validator';
 
 //회원 프로필 등록 Input 데이터
 export class ProfileDetailInputDto {
-  @ApiProperty({ example: '이름' })
+  @ApiProperty({ example: 'name', description: '이름' })
   @IsNotEmpty()
   name: string;
 
-  @ApiProperty({ example: '닉네임' })
+  @ApiProperty({ example: 'nickname', description: '닉네임' })
   @IsNotEmpty()
   nickname: string;
 }
@@ -61,15 +61,15 @@ export class SelectProfileOutputDto {
 
 //회원 프로필 수정 Input 데이터
 export class ModifyProfileDetailInputDto {
-  @ApiProperty({ example: '이름' })
+  @ApiProperty({ example: 'name', description: '이름' })
   @IsNotEmpty()
   name: string;
 
-  @ApiProperty({ example: '닉네임' })
+  @ApiProperty({ example: 'nickname', description: '닉네임' })
   @IsNotEmpty()
   nickname: string;
 
-  @ApiProperty({ example: '이메일@secondLife.com' })
+  @ApiProperty({ example: 'email@secondLife.com', description: '이메일' })
   @IsEmail()
   @IsNotEmpty()
   email: string;

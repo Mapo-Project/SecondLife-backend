@@ -23,10 +23,17 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import {
+  UserAuthPhoneInputDto,
+  UserAuthPhoneOutputDto,
+} from './dto/user.auth.dto';
+import {
   NickNameDuplicateInputDto,
   NickNameDuplicateOutputDto,
+  UserIdDuplicateInputDto,
+  UserIdDuplicateOutputDto,
 } from './dto/user.duplicate.dto';
 import { UserLogoutOutputDto } from './dto/user.logout.dto';
+import { PasswordInputDto } from './dto/user.password.dto';
 import {
   ModifyProfileDetailInputDto,
   ModifyProfileDetailOutputDto,
@@ -35,6 +42,7 @@ import {
   ProfileDetailOutputDto,
   SelectProfileOutputDto,
 } from './dto/user.profile.dto';
+import { UserSignupInputDto, UserSignupOutputDto } from './dto/user.signup.dto';
 import { UserWithdrawalOutputDto } from './dto/user.withdrawal.dto';
 import { multerOptions } from './multerOptions';
 import { UserService } from './user.service';
@@ -63,9 +71,119 @@ export class UserController {
     return await this.userService.nickNameDuplicate(nickNameDuplicateInputDto);
   }
 
+  @Get('duplicate/id')
+  @ApiOperation({
+    summary: '일반회원 아이디 중복체크 API(완료)',
+    description: '회원 아이디 입력',
+  })
+  @ApiOkResponse({
+    description: '아이디 중복체크 조회 성공',
+    type: UserIdDuplicateOutputDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request(user_id should not be empty)',
+  })
+  async userIdDuplicate(
+    @Query(ValidationPipe) userIdDuplicateInputDto: UserIdDuplicateInputDto,
+  ) {
+    return await this.userService.userIdDuplicate(userIdDuplicateInputDto);
+  }
+
+  @Get('signup/auth/phone')
+  @ApiOperation({
+    summary: '일반 회원가입 휴대폰 인증 API(완료)',
+    description: `회원 휴대폰 번호 입력
+    
+    테스트 할 시 테스트용 api 이용해 주세요 요금..`,
+  })
+  @ApiOkResponse({
+    description: '인증번호',
+    type: UserAuthPhoneOutputDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: '등록된 휴대폰 번호가 존재합니다.',
+  })
+  async userSignupAuthPhone(
+    @Query(ValidationPipe) userAuthPhoneInputDto: UserAuthPhoneInputDto,
+  ) {
+    return await this.userService.userSignupAuthPhone(userAuthPhoneInputDto);
+  }
+
+  @Get('signup/auth/phone/test')
+  @ApiOperation({
+    summary: '일반 회원가입 휴대폰 인증 API(테스트용)',
+    description: `회원 휴대폰 번호 입력`,
+  })
+  @ApiOkResponse({
+    description: '인증번호',
+    type: UserAuthPhoneOutputDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: '등록된 휴대폰 번호가 존재합니다.',
+  })
+  async userSignupAuthPhoneTest(
+    @Query(ValidationPipe) userAuthPhoneInputDto: UserAuthPhoneInputDto,
+  ) {
+    return await this.userService.userSignupAuthPhoneTest(
+      userAuthPhoneInputDto,
+    );
+  }
+
+  @Get('/password/test')
+  @ApiOperation({ summary: '비밀번호 암호화(테스트용)' })
+  async passwordTest(
+    @Query(ValidationPipe) passwordInputDto: PasswordInputDto,
+  ) {
+    return await this.userService.passwordTest(passwordInputDto);
+  }
+
+  @Post('/general/signup')
+  @ApiOperation({ summary: '일반 회원가입 API(완료)' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    description: '유저 정보',
+    type: UserSignupInputDto,
+  })
+  @ApiResponse({
+    status: 201,
+    description: '일반 회원가입 성공',
+    type: UserSignupOutputDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Error: Bad Request',
+  })
+  @ApiResponse({
+    status: 404,
+    description: '지원하지 않는 이미지 형식',
+  })
+  @ApiResponse({
+    status: 406,
+    description: '휴대폰 인증 실패',
+  })
+  @ApiResponse({
+    status: 409,
+    description: '중복된 user_id 또는 nickname 존재합니다.',
+  })
+  @ApiResponse({
+    status: 413,
+    description: '파일크기 제한',
+  })
+  @UseInterceptors(FileInterceptor('profile', multerOptions))
+  async generalSignUp(
+    @Body(ValidationPipe)
+    userSignupInputDto: UserSignupInputDto,
+    @UploadedFile() file: string,
+  ) {
+    return await this.userService.generalSignUp(userSignupInputDto, file);
+  }
+
   @Post('profile/add')
   @ApiOperation({
-    summary: '회원 프로필 추가 API(1차 완료/ 데이터 추가 예정)',
+    summary: '회원 프로필 추가 API(1차 완료)',
     description: '회원 프로필 추가정보 입력 입니다. 토큰 값 필수!',
   })
   @ApiBody({
