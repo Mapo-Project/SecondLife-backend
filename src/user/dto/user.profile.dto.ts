@@ -29,15 +29,15 @@ export class ProfileDetailOutputDto {
 
 //회원 프로필 데이터
 export class ProfileDetailDto {
-  @ApiProperty({ example: '이름' })
+  @ApiProperty({ example: 'name', description: '이름' })
   name: string;
-  @ApiProperty({ example: '닉네임' })
+  @ApiProperty({ example: 'nickname', description: '닉네임' })
   nickname: string;
-  @ApiProperty({ example: 'sns유형' })
+  @ApiProperty({ example: 'sns', description: 'sns유형' })
   method: string;
-  @ApiProperty({ example: '이메일' })
+  @ApiProperty({ example: 'email', description: '이메일' })
   email: string;
-  @ApiProperty({ example: '프로필사진' })
+  @ApiProperty({ example: 'img', description: '프로필사진' })
   profile_img: string;
 }
 

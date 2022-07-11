@@ -3,6 +3,7 @@ import {
   IsEmail,
   IsNotEmpty,
   IsString,
+  Matches,
   MaxLength,
   MinLength,
 } from 'class-validator';
@@ -19,9 +20,14 @@ export class UserSignupInputDto {
   @ApiProperty({ example: 'password', description: '비밀번호' })
   @IsString()
   @IsNotEmpty()
-  // @Matches(/^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#.?!@$%^&*-]).{20,}$/, {
-  //   message: 'password hash error',
-  // })
+  //정규 표현식
+  //최소 70자 이상으로 영문자 대문자, 영문자 소문자, 숫자, 특수문자가 각각 최소 1개 이상
+  @Matches(
+    /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$+= %^&*-]).{5,}$/,
+    {
+      message: 'password hash error',
+    },
+  )
   password: string;
 
   @ApiProperty({ example: 'name', description: '이름' })

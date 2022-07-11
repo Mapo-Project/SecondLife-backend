@@ -32,8 +32,17 @@ import {
   UserIdDuplicateInputDto,
   UserIdDuplicateOutputDto,
 } from './dto/user.duplicate.dto';
+import {
+  UserFindIdInputDto,
+  UserFindIdOutputDto,
+} from './dto/user.find.id.dto';
+import { UserLoginInputDto, UserLoginOutputDto } from './dto/user.login.dto';
 import { UserLogoutOutputDto } from './dto/user.logout.dto';
-import { PasswordInputDto } from './dto/user.password.dto';
+import {
+  PasswordChangeInputDto,
+  PasswordChangeOutputDto,
+  PasswordTestInputDto,
+} from './dto/user.password.dto';
 import {
   ModifyProfileDetailInputDto,
   ModifyProfileDetailOutputDto,
@@ -52,6 +61,7 @@ import { UserService } from './user.service';
 export class UserController {
   constructor(private userService: UserService) {}
 
+  //회원 닉네임 중복체크
   @Get('duplicate/nickname')
   @ApiOperation({
     summary: '회원 닉네임 중복체크 API(완료)',
@@ -71,6 +81,7 @@ export class UserController {
     return await this.userService.nickNameDuplicate(nickNameDuplicateInputDto);
   }
 
+  //일반회원 아이디 중복체크
   @Get('duplicate/id')
   @ApiOperation({
     summary: '일반회원 아이디 중복체크 API(완료)',
@@ -90,6 +101,7 @@ export class UserController {
     return await this.userService.userIdDuplicate(userIdDuplicateInputDto);
   }
 
+  //일반 회원가입 휴대폰 인증
   @Get('signup/auth/phone')
   @ApiOperation({
     summary: '일반 회원가입 휴대폰 인증 API(완료)',
@@ -111,6 +123,7 @@ export class UserController {
     return await this.userService.userSignupAuthPhone(userAuthPhoneInputDto);
   }
 
+  //일반 회원가입 휴대폰 인증(테스트용)
   @Get('signup/auth/phone/test')
   @ApiOperation({
     summary: '일반 회원가입 휴대폰 인증 API(테스트용)',
@@ -132,16 +145,87 @@ export class UserController {
     );
   }
 
+  //비밀번호 1차 암호화(프론트 테스트용)
   @Get('/password/test')
-  @ApiOperation({ summary: '비밀번호 암호화(테스트용)' })
-  async passwordTest(
-    @Query(ValidationPipe) passwordInputDto: PasswordInputDto,
+  @ApiOperation({ summary: '비밀번호 1차 암호화(프론트 테스트용)' })
+  async passwordFirstTest(
+    @Query(ValidationPipe) passwordTestInputDto: PasswordTestInputDto,
   ) {
-    return await this.userService.passwordTest(passwordInputDto);
+    return await this.userService.passwordFirstTest(passwordTestInputDto);
   }
 
+  //일반 회원 아이디 찾기
+  @Post('/find/id')
+  @ApiOperation({
+    summary: '일반 회원 아이디 찾기 API(완료)',
+    description: '일반 회원 아이디 찾기 입니다. 유저 닉네임, 이메일 정보 필수!',
+  })
+  @ApiBody({
+    description: '일반 회원 정보',
+    type: UserFindIdInputDto,
+  })
+  @ApiResponse({
+    status: 201,
+    description: '일반 회원 아이디 조회 성공',
+    type: UserFindIdOutputDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: '가입된 회원정보가 없습니다.',
+  })
+  async getFindUserId(
+    @Body(ValidationPipe)
+    userFindIdInputDto: UserFindIdInputDto,
+  ) {
+    return await this.userService.getFindUserId(userFindIdInputDto);
+  }
+
+  //일반 회원 비밀번호 변경
+  @Post('/change/password')
+  @ApiOperation({
+    summary: '일반 회원 비밀번호 변경 API(완료)',
+    description: '일반 회원 비밀번호 변경 입니다. 토큰 값 필수!',
+  })
+  @ApiBody({
+    description: '변경할 비밀번호',
+    type: PasswordChangeInputDto,
+  })
+  @ApiResponse({
+    status: 201,
+    description: '일반 회원 비밀번호 변경 성공',
+    type: PasswordChangeOutputDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: '일반 회원 비밀번호 변경 실패',
+  })
+  @ApiResponse({
+    status: 401,
+    description: '인증 오류',
+  })
+  @ApiResponse({
+    status: 404,
+    description: '변경할 비밀번호가 기존 비밀번호와 동일',
+  })
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard())
+  async generalChangePassword(
+    @Req() req,
+    @Body(ValidationPipe)
+    passwordChangeInputDto: PasswordChangeInputDto,
+  ) {
+    return await this.userService.generalChangePassword(
+      req.user,
+      passwordChangeInputDto,
+    );
+  }
+
+  //일반 회원가입
   @Post('/general/signup')
-  @ApiOperation({ summary: '일반 회원가입 API(완료)' })
+  @ApiOperation({
+    summary: '일반 회원가입 API(완료)',
+    description: '일반 회원가입 입니다.',
+  })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     description: '유저 정보',
@@ -181,6 +265,29 @@ export class UserController {
     return await this.userService.generalSignUp(userSignupInputDto, file);
   }
 
+  //일반 회원 로그인
+  @Post('/general/signin')
+  @ApiOperation({
+    summary: '일반 회원 로그인 API(완료)',
+    description: '일반 회원 로그인 입니다. 1차 암호화 비밀번호 필요!',
+  })
+  @ApiBody({ description: '유저 정보', type: UserLoginInputDto })
+  @ApiResponse({
+    status: 201,
+    description: '로그인 성공',
+    type: UserLoginOutputDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: '로그인 실패',
+  })
+  async generalLogin(
+    @Body(ValidationPipe) userLoginInputDto: UserLoginInputDto,
+  ): Promise<{ accessToken: string }> {
+    return await this.userService.generalLogin(userLoginInputDto);
+  }
+
+  //회원 프로필 추가
   @Post('profile/add')
   @ApiOperation({
     summary: '회원 프로필 추가 API(1차 완료)',
@@ -197,11 +304,15 @@ export class UserController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Bad Request(nickname should not be empty)',
+    description: '회원 프로필 추가정보가 등록된 회원 입니다.',
   })
   @ApiResponse({
     status: 401,
     description: '인증 오류',
+  })
+  @ApiResponse({
+    status: 409,
+    description: '중복된 nickname 존재합니다.',
   })
   @ApiBearerAuth()
   @UseGuards(AuthGuard())
@@ -215,6 +326,7 @@ export class UserController {
     );
   }
 
+  //회원 프로필 조회
   @Get('profile/select')
   @ApiOperation({
     summary: '회원 프로필 조회 API(1차 완료)',
@@ -238,6 +350,7 @@ export class UserController {
     return await this.userService.getUserProfile(req.user);
   }
 
+  //회원 프로필 수정
   @Post('profile/modify')
   @ApiOperation({
     summary: '회원 프로필 수정 API(1차 완료)',
@@ -260,6 +373,10 @@ export class UserController {
     status: 401,
     description: '인증 오류',
   })
+  @ApiResponse({
+    status: 409,
+    description: '중복된 nickname 존재합니다.',
+  })
   @ApiBearerAuth()
   @UseGuards(AuthGuard())
   async modifyUserProfile(
@@ -273,6 +390,7 @@ export class UserController {
     );
   }
 
+  //회원 프로필 이미지 수정
   @Post('profile/modify/img')
   @ApiOperation({
     summary: '회원 프로필 이미지 수정 API(완료)',
@@ -319,6 +437,7 @@ export class UserController {
     return await this.userService.modifyUserProfileImg(req.user, file);
   }
 
+  //회원 로그아웃
   @Get('/logout')
   @ApiOperation({
     summary: '회원 로그아웃 API(완료)',
@@ -338,6 +457,7 @@ export class UserController {
     return await this.userService.userLogout(req.user);
   }
 
+  //회원 탈퇴
   @Delete('/withdrawal')
   @ApiOperation({
     summary: '회원 탈퇴 API(완료)',

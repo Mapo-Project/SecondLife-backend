@@ -3,6 +3,7 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { getConnection } from 'typeorm';
 import { UserAuthPhoneInputDto } from './dto/user.auth.dto';
@@ -17,13 +18,21 @@ import {
 import { createImageURL } from './multerOptions';
 import axios from 'axios';
 import * as crypto from 'crypto';
-import { PasswordInputDto } from './dto/user.password.dto';
+import {
+  PasswordChangeInputDto,
+  PasswordTestInputDto,
+} from './dto/user.password.dto';
 import * as bcrypt from 'bcryptjs';
 import { UserSignupInputDto } from './dto/user.signup.dto';
+import { UserLoginInputDto } from './dto/user.login.dto';
+import { JwtService } from '@nestjs/jwt';
+import * as pbkdf2 from 'pbkdf2-sha256';
+import { UserFindIdInputDto } from './dto/user.find.id.dto';
 
 @Injectable()
 export class UserService {
   private logger = new Logger('UserService');
+  constructor(private jwtService: JwtService) {}
 
   async nickNameDuplicate(
     nickNameDuplicateInputDto: NickNameDuplicateInputDto,
@@ -175,15 +184,84 @@ export class UserService {
     });
   }
 
-  async passwordTest(passwordInputDto: PasswordInputDto) {
-    const { password } = passwordInputDto;
+  async passwordFirstTest(passwordTestInputDto: PasswordTestInputDto) {
+    const { password } = passwordTestInputDto;
 
-    const bcryptSalt = await bcrypt.genSalt();
-    const hashedPassword = await bcrypt.hash(password, bcryptSalt);
+    const cryptoSalt = process.env.CRYPTOSALT;
+    const cryptoPassword = await pbkdf2(
+      password,
+      cryptoSalt,
+      parseInt(process.env.REPEAT_NUMBER),
+      parseInt(process.env.LENGTH),
+    );
+    const hashed = await cryptoPassword.toString(process.env.HASHED);
 
     return {
-      password: hashedPassword,
+      password: hashed,
     };
+  }
+
+  async getFindUserId(userFindIdInputDto: UserFindIdInputDto) {
+    const { nickname, email } = userFindIdInputDto;
+
+    const conn = getConnection();
+    const [found] = await conn.query(
+      `SELECT user_id FROM user WHERE nickname='${nickname}' AND email='${email}' AND status='P' AND method='general'`,
+    );
+
+    this.logger.verbose(`nickname: ${nickname} 아이디 찾기`);
+    return found
+      ? Object.assign({
+          statusCode: 200,
+          message: '유저 아이디 조회 성공',
+          user_id: found.user_id,
+        })
+      : Object.assign({
+          statusCode: 400,
+          message: '가입된 회원정보가 없습니다.',
+        });
+  }
+
+  async generalChangePassword(
+    user_id: string,
+    passwordChangeInputDto: PasswordChangeInputDto,
+  ) {
+    const { original_password, change_password } = passwordChangeInputDto;
+
+    const conn = getConnection();
+    const [user] = await conn.query(
+      `SELECT user_id, password FROM user WHERE user_id='${user_id}' AND status='P' AND method='general' AND verify='Y'`,
+    );
+
+    if (user && (await bcrypt.compare(change_password, user.password))) {
+      this.logger.warn(`User ${user_id} 일반 회원 비밀번호 변경 실패`);
+      return Object.assign({
+        statusCode: 404,
+        message: '변경할 비밀번호가 기존 비밀번호와 동일 합니다.',
+      });
+    }
+
+    if (user && (await bcrypt.compare(original_password, user.password))) {
+      const salt = await bcrypt.genSalt();
+      const hashedPassword = await bcrypt.hash(change_password, salt);
+
+      await conn.query(
+        `UPDATE user SET password='${hashedPassword}', update_at=NOW() 
+        WHERE user_id='${user_id}' AND status='P' AND method='general' AND verify='Y'`,
+      );
+
+      this.logger.verbose(`User ${user_id} 일반 회원 비밀번호 변경 성공`);
+      return Object.assign({
+        statusCode: 201,
+        message: '일반 회원 비밀번호 변경 성공',
+      });
+    } else {
+      this.logger.warn(`User ${user_id} 일반 회원 비밀번호 변경 실패`);
+      return Object.assign({
+        statusCode: 400,
+        message: '일반 회원 비밀번호 변경 실패',
+      });
+    }
   }
 
   async generalSignUp(userSignupInputDto: UserSignupInputDto, file: string) {
@@ -202,7 +280,6 @@ export class UserService {
     } else {
       file = createImageURL(file);
     }
-    console.log(file);
 
     const method = 'general';
     const verify = 'Y';
@@ -254,6 +331,39 @@ export class UserService {
     }
   }
 
+  async generalLogin(userLoginInputDto: UserLoginInputDto) {
+    const { user_id, password } = userLoginInputDto;
+    const conn = getConnection();
+    const [user] = await conn.query(
+      `SELECT user_id, password FROM user WHERE user_id='${user_id}' AND status='P' AND method='general'`,
+    );
+
+    if (user && (await bcrypt.compare(password, user.password))) {
+      const payload = { user_id };
+      const accessToken = this.jwtService.sign(payload, {
+        expiresIn: `${process.env.JWT_SECRET_TIME}s`,
+      });
+      const refreshToken = this.jwtService.sign(payload, {
+        expiresIn: `${process.env.REFRESH_JWT_SECRET_TIME}m`,
+      });
+
+      const loginObject = Object.assign({
+        statusCode: 201,
+        message: '로그인 성공',
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+      });
+
+      this.logger.verbose(`User ${user_id} 일반 로그인 성공
+      Payload: ${JSON.stringify(loginObject)}`);
+
+      return loginObject;
+    } else {
+      this.logger.warn(`User ${user_id} 일반 로그인 실패`);
+      throw new UnauthorizedException('로그인 실패');
+    }
+  }
+
   async addUserProfile(
     user_id: string,
     profileDetailInputDto: ProfileDetailInputDto,
@@ -262,25 +372,35 @@ export class UserService {
 
     const conn = getConnection();
     const [found] = await conn.query(
-      `SELECT nickname FROM user WHERE nickname='${nickname}'`,
+      `SELECT user_id FROM user WHERE user_id='${user_id}' AND status='P' AND verify='Y'`,
     );
 
     if (!found) {
-      await conn.query(
-        `UPDATE user SET name='${name}', nickname='${nickname}', verify='Y', update_at=NOW() 
-        WHERE user_id='${user_id}' AND status='P'`,
-      );
-      this.logger.verbose(`User ${user_id} 회원 프로필 추가정보 등록 성공`);
-      return Object.assign({
-        statusCode: 201,
-        message: '회원 프로필 추가정보 등록 성공',
-      });
+      try {
+        await conn.query(
+          `UPDATE user SET name='${name}', nickname='${nickname}', verify='Y', update_at=NOW() 
+          WHERE user_id='${user_id}' AND status='P'`,
+        );
+        this.logger.verbose(`User ${user_id} 회원 프로필 추가정보 등록 성공`);
+        return Object.assign({
+          statusCode: 201,
+          message: '회원 프로필 추가정보 등록 성공',
+        });
+      } catch (error) {
+        this.logger.error(`회원 프로필 추가정보 등록 실패
+        Error: ${error}`);
+        if (error.code === 'ER_DUP_ENTRY') {
+          throw new ConflictException('중복된 nickname 존재합니다.');
+        } else {
+          throw new InternalServerErrorException();
+        }
+      }
     }
 
     this.logger.verbose(`User ${user_id} 회원 프로필 추가정보 등록 실패`);
     return Object.assign({
       statusCode: 400,
-      message: '회원 프로필 추가정보 등록 실패',
+      message: '회원 프로필 추가정보가 등록된 회원 입니다.',
     });
   }
 
@@ -314,13 +434,7 @@ export class UserService {
     const { name, nickname, email } = modifyProfileDetailInputDto;
     const conn = getConnection();
 
-    const [found] = await conn.query(
-      `SELECT nickname FROM user WHERE nickname = 
-      (SELECT nickname FROM user WHERE nickname = '${nickname}') 
-      AND nickname <> (SELECT nickname FROM user WHERE user_id = '${user_id}' AND status = 'P')`,
-    );
-
-    if (!found) {
+    try {
       await conn.query(
         `UPDATE user SET name='${name}', nickname='${nickname}', email='${email}', update_at=NOW()
         WHERE user_id='${user_id}' AND verify='Y' AND status='P' `,
@@ -331,13 +445,15 @@ export class UserService {
         statusCode: 201,
         message: '회원 프로필 수정 성공',
       });
+    } catch (error) {
+      this.logger.error(`회원 프로필 추가정보 수정 실패
+      Error: ${error}`);
+      if (error.code === 'ER_DUP_ENTRY') {
+        throw new ConflictException('중복된 nickname 존재합니다.');
+      } else {
+        throw new InternalServerErrorException();
+      }
     }
-
-    this.logger.verbose(`User ${user_id} 회원 프로필 수정 실패`);
-    return Object.assign({
-      statusCode: 400,
-      message: '회원 프로필 수정 실패',
-    });
   }
 
   async modifyUserProfileImg(user_id: string, file: string) {
