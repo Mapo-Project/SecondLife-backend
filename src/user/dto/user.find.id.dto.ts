@@ -3,9 +3,9 @@ import { IsEmail, IsString } from 'class-validator';
 
 //일반 회원 아이디 찾기 Input 데이터
 export class UserFindIdInputDto {
-  @ApiProperty({ example: 'nickname', description: '닉네임' })
+  @ApiProperty({ example: 'name', description: '이름' })
   @IsString()
-  nickname: string;
+  name: string;
 
   @ApiProperty({ example: 'email@secondLife.com', description: '이메일' })
   @IsEmail()

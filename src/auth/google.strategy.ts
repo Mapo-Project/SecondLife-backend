@@ -15,6 +15,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
   }
 
   async validate(accessToken, refreshToken, profile: any, done) {
+    console.log(profile);
     const payload: UserDto = {
       social_id: `${profile.id}`,
       method: 'google',

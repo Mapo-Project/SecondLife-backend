@@ -220,6 +220,46 @@ export class UserController {
     );
   }
 
+  //일반 회원 비밀번호 찾기(재발급)
+  // @Post('/find/password')
+  // @ApiOperation({
+  //   summary: '일반 회원 비밀번호 찾기(재발급) API(완료)',
+  //   description: '일반 회원 비밀번호 찾기(재발급) 입니다.',
+  // })
+  // @ApiBody({
+  //   description: '변경할 비밀번호',
+  //   type: PasswordChangeInputDto,
+  // })
+  // @ApiResponse({
+  //   status: 201,
+  //   description: '일반 회원 비밀번호 변경 성공',
+  //   type: PasswordChangeOutputDto,
+  // })
+  // @ApiResponse({
+  //   status: 400,
+  //   description: '일반 회원 비밀번호 변경 실패',
+  // })
+  // @ApiResponse({
+  //   status: 401,
+  //   description: '인증 오류',
+  // })
+  // @ApiResponse({
+  //   status: 404,
+  //   description: '변경할 비밀번호가 기존 비밀번호와 동일',
+  // })
+  // @ApiBearerAuth()
+  // @UseGuards(AuthGuard())
+  // async generalChangePassword(
+  //   @Req() req,
+  //   @Body(ValidationPipe)
+  //   passwordChangeInputDto: PasswordChangeInputDto,
+  // ) {
+  //   return await this.userService.generalChangePassword(
+  //     req.user,
+  //     passwordChangeInputDto,
+  //   );
+  // }
+
   //일반 회원가입
   @Post('/general/signup')
   @ApiOperation({
@@ -250,7 +290,7 @@ export class UserController {
   })
   @ApiResponse({
     status: 409,
-    description: '중복된 user_id 또는 nickname 존재합니다.',
+    description: '중복된 entry가 존재합니다.',
   })
   @ApiResponse({
     status: 413,
@@ -312,7 +352,7 @@ export class UserController {
   })
   @ApiResponse({
     status: 409,
-    description: '중복된 nickname 존재합니다.',
+    description: '중복된 entry가 존재합니다.',
   })
   @ApiBearerAuth()
   @UseGuards(AuthGuard())
@@ -375,7 +415,7 @@ export class UserController {
   })
   @ApiResponse({
     status: 409,
-    description: '중복된 nickname 존재합니다.',
+    description: '중복된 entry가 존재합니다.',
   })
   @ApiBearerAuth()
   @UseGuards(AuthGuard())

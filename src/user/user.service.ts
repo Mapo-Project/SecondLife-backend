@@ -41,7 +41,7 @@ export class UserService {
 
     const conn = getConnection();
     const [found] = await conn.query(
-      `SELECT nickname FROM user WHERE nickname='${nickname}'`,
+      `SELECT NICKNAME FROM USER WHERE NICKNAME='${nickname}'`,
     );
 
     this.logger.verbose(`Nickname: ${nickname} 중복체크`);
@@ -63,19 +63,19 @@ export class UserService {
 
     const conn = getConnection();
     const [found] = await conn.query(
-      `SELECT user_id FROM user WHERE user_id='${user_id}'`,
+      `SELECT USER_ID FROM USER WHERE USER_ID='${user_id}'`,
     );
 
     this.logger.verbose(`UserId: ${user_id} 중복체크`);
     return found
       ? Object.assign({
           statusCode: 200,
-          message: '닉네임 중복체크 조회 성공',
+          message: '아이디 중복체크 조회 성공',
           duplicate: 'true',
         })
       : Object.assign({
           statusCode: 200,
-          message: '닉네임 중복체크 조회 성공',
+          message: '아이디 중복체크 조회 성공',
           duplicate: 'false',
         });
   }
@@ -102,7 +102,7 @@ export class UserService {
     return signature.toString();
   }
 
-  private sendSMS(phone_number: string) {
+  private sendSMS(sendObject: any) {
     const number: number =
       Math.floor(Math.random() * (999999 - 111111 + 1)) + 111111;
     const body = {
@@ -113,7 +113,7 @@ export class UserService {
       content: `인증번호는 [${number}] 입니다.`,
       messages: [
         {
-          to: phone_number, // 수신자 번호
+          to: sendObject.phone_number, // 수신자 번호
         },
       ],
     };
@@ -142,13 +142,17 @@ export class UserService {
   async userSignupAuthPhone(userAuthPhoneInputDto: UserAuthPhoneInputDto) {
     const { phone_number } = userAuthPhoneInputDto;
     const conn = getConnection();
+    const sendObject = {
+      phone_number: phone_number,
+      type: 'auth',
+    };
 
     const [found] = await conn.query(
-      `SELECT user_id FROM user WHERE phone_num='${phone_number}' AND method='general' AND status='P'`,
+      `SELECT USER_ID FROM USER WHERE PHONE_NUM='${phone_number}' AND METHOD='general' AND STATUS='P'`,
     );
 
     if (!found) {
-      return await this.sendSMS(phone_number);
+      return await this.sendSMS(sendObject);
     }
 
     this.logger.verbose(`일반 회원가입 휴대폰 인증 실패`);
@@ -163,7 +167,7 @@ export class UserService {
     const conn = getConnection();
 
     const [found] = await conn.query(
-      `SELECT user_id FROM user WHERE phone_num='${phone_number}' AND method='general' AND status='P'`,
+      `SELECT USER_ID FROM USER WHERE PHONE_NUM='${phone_number}' AND METHOD='general' AND STATUS='P'`,
     );
 
     if (!found) {
@@ -202,24 +206,27 @@ export class UserService {
   }
 
   async getFindUserId(userFindIdInputDto: UserFindIdInputDto) {
-    const { nickname, email } = userFindIdInputDto;
+    const { name, email } = userFindIdInputDto;
 
     const conn = getConnection();
     const [found] = await conn.query(
-      `SELECT user_id FROM user WHERE nickname='${nickname}' AND email='${email}' AND status='P' AND method='general'`,
+      `SELECT USER_ID FROM USER WHERE NAME='${name}' AND EMAIL='${email}' AND STATUS='P' AND METHOD='general'`,
     );
 
-    this.logger.verbose(`nickname: ${nickname} 아이디 찾기`);
-    return found
-      ? Object.assign({
-          statusCode: 200,
-          message: '유저 아이디 조회 성공',
-          user_id: found.user_id,
-        })
-      : Object.assign({
-          statusCode: 400,
-          message: '가입된 회원정보가 없습니다.',
-        });
+    if (found) {
+      this.logger.verbose(`User: ${found.USER_ID} 아이디 찾기 성공`);
+      return Object.assign({
+        statusCode: 201,
+        message: '유저 아이디 조회 성공',
+        user_id: found.USER_ID,
+      });
+    }
+
+    return Object.assign({
+      statusCode: 201,
+      message: '가입된 회원정보가 없습니다.',
+      user_id: null,
+    });
   }
 
   async generalChangePassword(
@@ -230,10 +237,10 @@ export class UserService {
 
     const conn = getConnection();
     const [user] = await conn.query(
-      `SELECT user_id, password FROM user WHERE user_id='${user_id}' AND status='P' AND method='general' AND verify='Y'`,
+      `SELECT USER_ID, PASSWORD FROM USER WHERE USER_ID='${user_id}' AND STATUS='P' AND METHOD='general' AND VERIFY='Y'`,
     );
 
-    if (user && (await bcrypt.compare(change_password, user.password))) {
+    if (user && (await bcrypt.compare(change_password, user.PASSWORD))) {
       this.logger.warn(`User ${user_id} 일반 회원 비밀번호 변경 실패`);
       return Object.assign({
         statusCode: 404,
@@ -241,13 +248,13 @@ export class UserService {
       });
     }
 
-    if (user && (await bcrypt.compare(original_password, user.password))) {
+    if (user && (await bcrypt.compare(original_password, user.PASSWORD))) {
       const salt = await bcrypt.genSalt();
       const hashedPassword = await bcrypt.hash(change_password, salt);
 
       await conn.query(
-        `UPDATE user SET password='${hashedPassword}', update_at=NOW() 
-        WHERE user_id='${user_id}' AND status='P' AND method='general' AND verify='Y'`,
+        `UPDATE USER SET PASSWORD='${hashedPassword}', UPDATE_DT=NOW(), UPDATE_ID='${user_id}' 
+        WHERE USER_ID='${user_id}' AND STATUS='P' AND METHOD='general' AND VERIFY='Y'`,
       );
 
       this.logger.verbose(`User ${user_id} 일반 회원 비밀번호 변경 성공`);
@@ -291,7 +298,7 @@ export class UserService {
 
     const conn = getConnection();
     const sql =
-      'INSERT INTO user(user_id, password, name, nickname, method, phone_num, email, verify, status, type, create_at, profile_img) VALUES(?,?,?,?,?,?,?,?,?,?,NOW(),?)';
+      'INSERT INTO USER(USER_ID, PASSWORD, NAME, NICKNAME, METHOD, PHONE_NUM, EMAIL, VERIFY, STATUS, TYPE, INSERT_DT, INSERT_ID, PROFILE_IMG) VALUES(?,?,?,?,?,?,?,?,?,?,NOW(),?,?)';
     const params = [
       user_id,
       hashedPassword,
@@ -303,6 +310,7 @@ export class UserService {
       verify,
       status,
       type,
+      user_id,
       file,
     ];
     try {
@@ -324,7 +332,8 @@ export class UserService {
       this.logger.error(`일반 회원가입 실패
       Error: ${error}`);
       if (error.code === 'ER_DUP_ENTRY') {
-        throw new ConflictException('중복된 user_id 또는 nickname 존재합니다.');
+        console.log(error);
+        throw new ConflictException(`${error.sqlMessage}`);
       } else {
         throw new InternalServerErrorException();
       }
@@ -335,10 +344,10 @@ export class UserService {
     const { user_id, password } = userLoginInputDto;
     const conn = getConnection();
     const [user] = await conn.query(
-      `SELECT user_id, password FROM user WHERE user_id='${user_id}' AND status='P' AND method='general'`,
+      `SELECT USER_ID, PASSWORD FROM USER WHERE USER_ID='${user_id}' AND STATUS='P' AND METHOD='general'`,
     );
 
-    if (user && (await bcrypt.compare(password, user.password))) {
+    if (user && (await bcrypt.compare(password, user.PASSWORD))) {
       const payload = { user_id };
       const accessToken = this.jwtService.sign(payload, {
         expiresIn: `${process.env.JWT_SECRET_TIME}s`,
@@ -346,6 +355,11 @@ export class UserService {
       const refreshToken = this.jwtService.sign(payload, {
         expiresIn: `${process.env.REFRESH_JWT_SECRET_TIME}m`,
       });
+
+      await conn.query(
+        `UPDATE USER SET REFRESH_TOKEN='${refreshToken}', UPDATE_DT=NOW(), UPDATE_ID='${user_id}' 
+         WHERE USER_ID='${user_id}' AND STATUS='P' AND METHOD='general'`,
+      );
 
       const loginObject = Object.assign({
         statusCode: 201,
@@ -372,14 +386,14 @@ export class UserService {
 
     const conn = getConnection();
     const [found] = await conn.query(
-      `SELECT user_id FROM user WHERE user_id='${user_id}' AND status='P' AND verify='Y'`,
+      `SELECT USER_ID FROM USER WHERE USER_ID='${user_id}' AND STATUS='P' AND VERIFY='Y'`,
     );
 
     if (!found) {
       try {
         await conn.query(
-          `UPDATE user SET name='${name}', nickname='${nickname}', verify='Y', update_at=NOW() 
-          WHERE user_id='${user_id}' AND status='P'`,
+          `UPDATE USER SET NAME='${name}', NICKNAME='${nickname}', VERIFY='Y', UPDATE_DT=NOW(), UPDATE_ID='${user_id}' 
+          WHERE USER_ID='${user_id}' AND STATUS='P'`,
         );
         this.logger.verbose(`User ${user_id} 회원 프로필 추가정보 등록 성공`);
         return Object.assign({
@@ -390,7 +404,7 @@ export class UserService {
         this.logger.error(`회원 프로필 추가정보 등록 실패
         Error: ${error}`);
         if (error.code === 'ER_DUP_ENTRY') {
-          throw new ConflictException('중복된 nickname 존재합니다.');
+          throw new ConflictException(`${error.sqlMessage}`);
         } else {
           throw new InternalServerErrorException();
         }
@@ -407,8 +421,9 @@ export class UserService {
   async getUserProfile(user_id: string) {
     const conn = getConnection();
     const [user] = await conn.query(
-      `SELECT name, nickname, method, email, profile_img FROM user 
-      WHERE user_id='${user_id}' AND verify='Y' AND status='P'`,
+      `SELECT NAME AS name, NICKNAME AS nickname, METHOD AS method, 
+       EMAIL AS email, PROFILE_IMG AS profile_img FROM USER 
+       WHERE USER_ID='${user_id}' AND VERIFY='Y' AND STATUS='P'`,
     );
 
     if (user) {
@@ -436,8 +451,8 @@ export class UserService {
 
     try {
       await conn.query(
-        `UPDATE user SET name='${name}', nickname='${nickname}', email='${email}', update_at=NOW()
-        WHERE user_id='${user_id}' AND verify='Y' AND status='P' `,
+        `UPDATE USER SET NAME='${name}', NICKNAME='${nickname}', EMAIL='${email}', UPDATE_DT=NOW(), UPDATE_ID='${user_id}'
+        WHERE USER_ID='${user_id}' AND VERIFY='Y' AND STATUS='P' `,
       );
 
       this.logger.verbose(`User ${user_id} 회원 프로필 수정 성공`);
@@ -449,7 +464,7 @@ export class UserService {
       this.logger.error(`회원 프로필 추가정보 수정 실패
       Error: ${error}`);
       if (error.code === 'ER_DUP_ENTRY') {
-        throw new ConflictException('중복된 nickname 존재합니다.');
+        throw new ConflictException(`${error.sqlMessage}`);
       } else {
         throw new InternalServerErrorException();
       }
@@ -462,8 +477,8 @@ export class UserService {
       const conn = getConnection();
 
       await conn.query(
-        `UPDATE user SET profile_img='${generatedFile}', update_at=NOW()
-          WHERE user_id='${user_id}' AND verify='Y' AND status='P' `,
+        `UPDATE USER SET PROFILE_IMG='${generatedFile}', UPDATE_DT=NOW(), UPDATE_ID='${user_id}'
+          WHERE USER_ID='${user_id}' AND VERIFY='Y' AND STATUS='P' `,
       );
 
       this.logger.verbose(`User ${user_id} 회원 프로필 이미지 수정 성공`);
@@ -483,7 +498,8 @@ export class UserService {
   async userLogout(user_id: string) {
     const conn = getConnection();
     await conn.query(
-      `UPDATE user SET refresh_token= NULL WHERE user_id='${user_id}' AND status='P'`,
+      `UPDATE USER SET REFRESH_TOKEN=NULL, UPDATE_DT=NOW(), UPDATE_ID='${user_id}' 
+       WHERE USER_ID='${user_id}' AND status='P'`,
     );
 
     this.logger.verbose(`User ${user_id} 회원 로그아웃 성공`);
@@ -496,7 +512,8 @@ export class UserService {
   async userWithdrawal(user_id: string) {
     const conn = getConnection();
     await conn.query(
-      `UPDATE user SET status='D', delete_at=NOW() WHERE user_id='${user_id}' AND status='P'`,
+      `UPDATE USER SET STATUS='D', EMAIL=NULL, REFRESH_TOKEN=NULL, DELETE_DT=NOW(), DELETE_ID='${user_id}' 
+       WHERE USER_ID='${user_id}' AND STATUS='P'`,
     );
 
     this.logger.verbose(`User ${user_id} 회원 탈퇴 성공`);
