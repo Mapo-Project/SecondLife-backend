@@ -34,18 +34,29 @@ export class UserSignupInputDto {
   @IsNotEmpty()
   name: string;
 
-  @ApiProperty({ example: 'nickname', description: '닉네임' })
+  @ApiProperty({ example: '1111-01-01', description: '생년월일' })
   @IsNotEmpty()
-  nickname: string;
-
-  @ApiProperty({ example: '01033337777', description: '휴대폰 번호' })
-  @IsNotEmpty()
-  phone_num: string;
+  birth: string;
 
   @ApiProperty({ example: 'email@secondLife.com', description: '이메일' })
   @IsEmail()
   @IsNotEmpty()
   email: string;
+
+  @ApiProperty({ example: '01033337777', description: '휴대폰 번호' })
+  @IsNotEmpty()
+  phone_num: string;
+
+  @ApiProperty({
+    example: '서울특별시 마포구 성산로 4길 53',
+    description: '주소',
+  })
+  @IsNotEmpty()
+  address: string;
+
+  @ApiProperty({ example: '마포구청사 제3별관', description: '상세주소' })
+  @IsNotEmpty()
+  detail_address: string;
 
   @ApiProperty({ example: 'Y', description: '휴대폰 인증 여부' })
   @IsNotEmpty()

@@ -7,9 +7,28 @@ export class ProfileDetailInputDto {
   @IsNotEmpty()
   name: string;
 
-  @ApiProperty({ example: 'nickname', description: '닉네임' })
+  @ApiProperty({ example: '1111-01-01', description: '생년월일' })
   @IsNotEmpty()
-  nickname: string;
+  birth: string;
+
+  @ApiProperty({ example: '01033337777', description: '휴대폰 번호' })
+  @IsNotEmpty()
+  phone_num: string;
+
+  @ApiProperty({
+    example: '서울특별시 마포구 성산로 4길 53',
+    description: '주소',
+  })
+  @IsNotEmpty()
+  address: string;
+
+  @ApiProperty({ example: '마포구청사 제3별관', description: '상세주소' })
+  @IsNotEmpty()
+  detail_address: string;
+
+  @ApiProperty({ example: 'Y', description: '휴대폰 인증 여부' })
+  @IsNotEmpty()
+  phone_verify: string;
 }
 
 //회원 프로필 등록 Output 데이터
@@ -31,12 +50,28 @@ export class ProfileDetailOutputDto {
 export class ProfileDetailDto {
   @ApiProperty({ example: 'name', description: '이름' })
   name: string;
-  @ApiProperty({ example: 'nickname', description: '닉네임' })
-  nickname: string;
-  @ApiProperty({ example: 'sns', description: 'sns유형' })
-  method: string;
-  @ApiProperty({ example: 'email', description: '이메일' })
+
+  @ApiProperty({ example: '1111-01-01', description: '생년월일' })
+  birth: string;
+
+  @ApiProperty({ example: 'email@secondLife.com', description: '이메일' })
   email: string;
+
+  @ApiProperty({ example: '01033337777', description: '휴대폰 번호' })
+  phone_num: string;
+
+  @ApiProperty({
+    example: '서울특별시 마포구 성산로 4길 53',
+    description: '주소',
+  })
+  address: string;
+
+  @ApiProperty({ example: '마포구청사 제3별관', description: '상세주소' })
+  detail_address: string;
+
+  @ApiProperty({ example: 'kakao', description: 'sns유형' })
+  method: string;
+
   @ApiProperty({ example: 'img', description: '프로필사진' })
   profile_img: string;
 }
@@ -65,14 +100,29 @@ export class ModifyProfileDetailInputDto {
   @IsNotEmpty()
   name: string;
 
-  @ApiProperty({ example: 'nickname', description: '닉네임' })
+  @ApiProperty({ example: '1111-01-01', description: '생년월일' })
   @IsNotEmpty()
-  nickname: string;
+  birth: string;
 
   @ApiProperty({ example: 'email@secondLife.com', description: '이메일' })
   @IsEmail()
   @IsNotEmpty()
   email: string;
+
+  @ApiProperty({ example: '01033337777', description: '휴대폰 번호' })
+  @IsNotEmpty()
+  phone_num: string;
+
+  @ApiProperty({
+    example: '서울특별시 마포구 성산로 4길 53',
+    description: '주소',
+  })
+  @IsNotEmpty()
+  address: string;
+
+  @ApiProperty({ example: '마포구청사 제3별관', description: '상세주소' })
+  @IsNotEmpty()
+  detail_address: string;
 }
 
 //회원 프로필 수정 Output 데이터
