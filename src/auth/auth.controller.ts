@@ -67,7 +67,7 @@ export class AuthController {
   @UseGuards(AuthGuard('kakao'))
   async kakaoCallBack(@Req() req, @Res() res) {
     const user = await this.authService.loginCallBack(req.user as UserDto);
-    this.logger.verbose(`User ${req.user.user_id} 카카오 로그인 성공
+    this.logger.verbose(`User ${req.user.social_id} 카카오 로그인 성공
     Payload: ${JSON.stringify(user)}`);
 
     return res.redirect(
@@ -94,7 +94,7 @@ export class AuthController {
   @UseGuards(AuthGuard('google'))
   async googleCallBack(@Req() req, @Res() res) {
     const user = await this.authService.loginCallBack(req.user as UserDto);
-    this.logger.verbose(`User ${req.user.user_id} 구글 로그인 성공
+    this.logger.verbose(`User ${req.user.social_id} 구글 로그인 성공
     Payload: ${JSON.stringify(user)}`);
 
     return res.redirect(

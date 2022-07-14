@@ -13,7 +13,7 @@ export class AuthService {
     const { social_id, method, email, profile_img } = userDto;
     const verify = 'N';
     const status = 'P';
-    const type = 'G';
+    const role_id = 1;
 
     if (!social_id) {
       return Object.assign({
@@ -24,7 +24,7 @@ export class AuthService {
 
     const conn = getConnection();
     const [found] = await conn.query(
-      `SELECT social_id FROM user WHERE social_id='${social_id}' AND status='P'`,
+      `SELECT SOCIAL_ID FROM USER WHERE SOCIAL_ID='${social_id}' AND STATUS='P'`,
     );
 
     if (!found) {
@@ -38,15 +38,16 @@ export class AuthService {
       });
 
       const sql =
-        'INSERT INTO user(user_id, social_id, method, email, verify, status, type, create_at, profile_img, refresh_token) VALUES(?,?,?,?,?,?,?,NOW(),?,?)';
+        'INSERT INTO USER(USER_ID, ROLE_ID, SOCIAL_ID, METHOD, EMAIL, VERIFY, STATUS, INSERT_DT, INSERT_ID, PROFILE_IMG, REFRESH_TOKEN) VALUES(?,?,?,?,?,?,?,NOW(),?,?,?)';
       const params = [
         user_id,
+        role_id,
         social_id,
         method,
         email,
         verify,
         status,
-        type,
+        user_id,
         profile_img,
         refreshToken,
       ];
@@ -63,9 +64,9 @@ export class AuthService {
     }
 
     const [user] = await conn.query(
-      `SELECT user_id FROM user WHERE social_id='${social_id}' AND status='P'`,
+      `SELECT USER_ID FROM USER WHERE SOCIAL_ID='${social_id}' AND STATUS='P'`,
     );
-    const user_id = user.user_id;
+    const user_id = user.USER_ID;
     const payload = { user_id };
     const accessToken = this.jwtService.sign(payload, {
       expiresIn: `${process.env.JWT_SECRET_TIME}s`,
@@ -75,17 +76,18 @@ export class AuthService {
     });
 
     await conn.query(
-      `UPDATE user SET refresh_token='${refreshToken}' WHERE user_id='${user_id}' AND status='P'`,
+      `UPDATE USER SET REFRESH_TOKEN='${refreshToken}', UPDATE_DT=NOW(), UPDATE_ID='${user_id}' 
+       WHERE USER_ID='${user_id}' AND STATUS='P'`,
     );
 
     const [user_verify] = await conn.query(
-      `SELECT verify FROM user WHERE user_id='${user_id}' AND status='P'`,
+      `SELECT VERIFY FROM USER WHERE USER_ID='${user_id}' AND STATUS='P'`,
     );
 
     return Object.assign({
       statusCode: 200,
       message: '로그인 성공',
-      verify: user_verify.verify,
+      verify: user_verify.VERIFY,
       accessToken: accessToken,
       refreshToken: refreshToken,
     });
@@ -94,11 +96,11 @@ export class AuthService {
   async accessTokenReissuance(refreshToken: string) {
     const conn = getConnection();
     const [found] = await conn.query(
-      `SELECT user_id FROM user WHERE refresh_token='${refreshToken}' AND status='P'`,
+      `SELECT USER_ID FROM USER WHERE REFRESH_TOKEN='${refreshToken}' AND STATUS='P'`,
     );
 
     if (found) {
-      const user_id = found.user_id;
+      const user_id = found.USER_ID;
       const payload = { user_id };
       const accessToken = this.jwtService.sign(payload, {
         expiresIn: `${process.env.JWT_SECRET_TIME}s`,
