@@ -30,5 +30,5 @@ export class UserIdDuplicateOutputDto {
     example: 'true',
     description: '중복체크 여부',
   })
-  duplicate: string;
+  duplicate: 'true' | 'false';
 }

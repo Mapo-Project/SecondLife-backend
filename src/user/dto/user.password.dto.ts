@@ -21,7 +21,7 @@ export class PasswordChangeInputDto {
   //정규 표현식
   //최소 70자 이상으로 영문자 대문자, 영문자 소문자, 숫자, 특수문자가 각각 최소 1개 이상
   @Matches(
-    /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$+= %^&*-]).{5,}$/,
+    /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$+= %^&*-]).{70,}$/,
     {
       message: 'password hash error',
     },
@@ -38,7 +38,7 @@ export class PasswordChangeInputDto {
   //정규 표현식
   //최소 70자 이상으로 영문자 대문자, 영문자 소문자, 숫자, 특수문자가 각각 최소 1개 이상
   @Matches(
-    /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$+= %^&*-]).{5,}$/,
+    /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$+= %^&*-]).{70,}$/,
     {
       message: 'password hash error',
     },
@@ -49,7 +49,7 @@ export class PasswordChangeInputDto {
 //일반회원 비밀번호 변경 Output 데이터
 export class PasswordChangeOutputDto {
   @ApiProperty({
-    example: '201',
+    example: 201,
     description: '상태코드',
   })
   statusCode: number;

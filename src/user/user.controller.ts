@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Param,
   Post,
   Query,
   Req,
@@ -34,6 +35,11 @@ import {
   UserFindIdInputDto,
   UserFindIdOutputDto,
 } from './dto/user.find.id.dto';
+import {
+  UserFollowInputDto,
+  UserFollowOutputDto,
+  UserFollowwingOutputDto,
+} from './dto/user.follow.dto';
 import { UserLoginInputDto, UserLoginOutputDto } from './dto/user.login.dto';
 import { UserLogoutOutputDto } from './dto/user.logout.dto';
 import {
@@ -75,7 +81,7 @@ export class UserController {
   })
   async userIdDuplicate(
     @Query(ValidationPipe) userIdDuplicateInputDto: UserIdDuplicateInputDto,
-  ) {
+  ): Promise<UserIdDuplicateOutputDto> {
     return await this.userService.userIdDuplicate(userIdDuplicateInputDto);
   }
 
@@ -97,7 +103,7 @@ export class UserController {
   })
   async userSignupAuthPhone(
     @Query(ValidationPipe) userAuthPhoneInputDto: UserAuthPhoneInputDto,
-  ) {
+  ): Promise<UserAuthPhoneOutputDto> {
     return await this.userService.userSignupAuthPhone(userAuthPhoneInputDto);
   }
 
@@ -117,7 +123,7 @@ export class UserController {
   })
   async userSignupAuthPhoneTest(
     @Query(ValidationPipe) userAuthPhoneInputDto: UserAuthPhoneInputDto,
-  ) {
+  ): Promise<UserAuthPhoneOutputDto> {
     return await this.userService.userSignupAuthPhoneTest(
       userAuthPhoneInputDto,
     );
@@ -133,17 +139,12 @@ export class UserController {
   }
 
   //일반 회원 아이디 찾기
-  @Post('/find/id')
+  @Get('/find/id')
   @ApiOperation({
     summary: '일반 회원 아이디 찾기 API(완료)',
     description: '일반 회원 아이디 찾기 입니다. 유저 닉네임, 이메일 정보 필수!',
   })
-  @ApiBody({
-    description: '일반 회원 정보',
-    type: UserFindIdInputDto,
-  })
-  @ApiResponse({
-    status: 201,
+  @ApiOkResponse({
     description: '일반 회원 아이디 조회 성공',
     type: UserFindIdOutputDto,
   })
@@ -152,9 +153,9 @@ export class UserController {
     description: '가입된 회원정보가 없습니다.',
   })
   async getFindUserId(
-    @Body(ValidationPipe)
+    @Query(ValidationPipe)
     userFindIdInputDto: UserFindIdInputDto,
-  ) {
+  ): Promise<UserFindIdOutputDto> {
     return await this.userService.getFindUserId(userFindIdInputDto);
   }
 
@@ -191,7 +192,7 @@ export class UserController {
     @Req() req,
     @Body(ValidationPipe)
     passwordChangeInputDto: PasswordChangeInputDto,
-  ) {
+  ): Promise<PasswordChangeOutputDto> {
     return await this.userService.generalChangePassword(
       req.user,
       passwordChangeInputDto,
@@ -219,12 +220,12 @@ export class UserController {
     description: 'Error: Bad Request',
   })
   @ApiResponse({
-    status: 404,
-    description: '지원하지 않는 이미지 형식',
+    status: 401,
+    description: '휴대폰 인증 실패',
   })
   @ApiResponse({
-    status: 406,
-    description: '휴대폰 인증 실패',
+    status: 404,
+    description: '지원하지 않는 이미지 형식',
   })
   @ApiResponse({
     status: 409,
@@ -239,7 +240,7 @@ export class UserController {
     @Body(ValidationPipe)
     userSignupInputDto: UserSignupInputDto,
     @UploadedFile() file: string,
-  ) {
+  ): Promise<UserSignupOutputDto> {
     return await this.userService.generalSignUp(userSignupInputDto, file);
   }
 
@@ -261,7 +262,7 @@ export class UserController {
   })
   async generalLogin(
     @Body(ValidationPipe) userLoginInputDto: UserLoginInputDto,
-  ): Promise<{ accessToken: string }> {
+  ): Promise<UserLoginOutputDto> {
     return await this.userService.generalLogin(userLoginInputDto);
   }
 
@@ -297,7 +298,7 @@ export class UserController {
   async addUserProfile(
     @Req() req,
     @Body(ValidationPipe) profileDetailInputDto: ProfileDetailInputDto,
-  ) {
+  ): Promise<ProfileDetailOutputDto> {
     return await this.userService.addUserProfile(
       req.user,
       profileDetailInputDto,
@@ -324,7 +325,7 @@ export class UserController {
   })
   @ApiBearerAuth()
   @UseGuards(AuthGuard())
-  async getUserProfile(@Req() req) {
+  async getUserProfile(@Req() req): Promise<SelectProfileOutputDto> {
     return await this.userService.getUserProfile(req.user);
   }
 
@@ -361,7 +362,7 @@ export class UserController {
     @Req() req,
     @Body(ValidationPipe)
     modifyProfileDetailInputDto: ModifyProfileDetailInputDto,
-  ) {
+  ): Promise<ModifyProfileDetailOutputDto> {
     return await this.userService.modifyUserProfile(
       req.user,
       modifyProfileDetailInputDto,
@@ -411,8 +412,53 @@ export class UserController {
   @ApiBearerAuth()
   @UseGuards(AuthGuard())
   @UseInterceptors(FileInterceptor('profile', multerOptions))
-  async modifyUserProfileImg(@Req() req, @UploadedFile() file: string) {
+  async modifyUserProfileImg(
+    @Req() req,
+    @UploadedFile() file: string,
+  ): Promise<ModifyProfileImgOutputDto> {
     return await this.userService.modifyUserProfileImg(req.user, file);
+  }
+
+  //회원 팔로우 / 언팔로우
+  @Post('follow')
+  @ApiOperation({
+    summary: '팔로우 / 언팔로우 API(완료)',
+    description: '회원 팔로우 / 언팔로우 입니다. 토큰 값 필수!',
+  })
+  @ApiResponse({
+    status: 201,
+    type: UserFollowOutputDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: '자기 자신을 팔로우 할 수 없습니다.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: '존재하지 않는 유저입니다.',
+  })
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard())
+  async userFollow(
+    @Req() req,
+    @Query(ValidationPipe) userFollowInputDto: UserFollowInputDto,
+  ): Promise<UserFollowOutputDto> {
+    return await this.userService.userFollow(req.user, userFollowInputDto);
+  }
+
+  //회원 팔로잉 조회
+  @Post('following/select')
+  @ApiOperation({
+    summary: '회원 팔로잉 조회 API(완료)',
+    description: '회원 팔로잉 조회 입니다. 토큰 값 필수!',
+  })
+  @ApiOkResponse({
+    type: UserFollowwingOutputDto,
+  })
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard())
+  async getUserFollowing(@Req() req) {
+    // return await this.userService.getUserFollowing(req.user);
   }
 
   //회원 로그아웃
@@ -431,7 +477,7 @@ export class UserController {
   })
   @ApiBearerAuth()
   @UseGuards(AuthGuard())
-  async userLogout(@Req() req) {
+  async userLogout(@Req() req): Promise<UserLogoutOutputDto> {
     return await this.userService.userLogout(req.user);
   }
 
@@ -451,7 +497,7 @@ export class UserController {
   })
   @ApiBearerAuth()
   @UseGuards(AuthGuard())
-  async userWithdrawal(@Req() req) {
+  async userWithdrawal(@Req() req): Promise<UserWithdrawalOutputDto> {
     return await this.userService.userWithdrawal(req.user);
   }
 }

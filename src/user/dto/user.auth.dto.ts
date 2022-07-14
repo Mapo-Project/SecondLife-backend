@@ -9,12 +9,12 @@ export class UserAuthPhoneInputDto {
     example: '01033337777',
   })
   @IsNotEmpty()
-  phone_number: string;
+  phone_number: number;
 }
 
 export class UserAuthPhoneOutputDto {
   @ApiProperty({
-    example: '200',
+    example: 200,
     description: '상태코드',
   })
   statusCode: number;

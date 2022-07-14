@@ -1,37 +1,58 @@
 import {
   ConflictException,
+  HttpException,
+  HttpStatus,
   Injectable,
   InternalServerErrorException,
   Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { getConnection } from 'typeorm';
-import { UserAuthPhoneInputDto } from './dto/user.auth.dto';
-import { UserIdDuplicateInputDto } from './dto/user.duplicate.dto';
+import {
+  UserAuthPhoneInputDto,
+  UserAuthPhoneOutputDto,
+} from './dto/user.auth.dto';
+import {
+  UserIdDuplicateInputDto,
+  UserIdDuplicateOutputDto,
+} from './dto/user.duplicate.dto';
 import {
   ModifyProfileDetailInputDto,
+  ModifyProfileDetailOutputDto,
+  ModifyProfileImgOutputDto,
   ProfileDetailInputDto,
+  ProfileDetailOutputDto,
+  SelectProfileOutputDto,
 } from './dto/user.profile.dto';
 import { createImageURL } from './multerOptions';
 import axios from 'axios';
 import * as crypto from 'crypto';
 import {
   PasswordChangeInputDto,
+  PasswordChangeOutputDto,
   PasswordTestInputDto,
 } from './dto/user.password.dto';
 import * as bcrypt from 'bcryptjs';
-import { UserSignupInputDto } from './dto/user.signup.dto';
-import { UserLoginInputDto } from './dto/user.login.dto';
+import { UserSignupInputDto, UserSignupOutputDto } from './dto/user.signup.dto';
+import { UserLoginInputDto, UserLoginOutputDto } from './dto/user.login.dto';
 import { JwtService } from '@nestjs/jwt';
 import * as pbkdf2 from 'pbkdf2-sha256';
-import { UserFindIdInputDto } from './dto/user.find.id.dto';
+import {
+  UserFindIdInputDto,
+  UserFindIdOutputDto,
+} from './dto/user.find.id.dto';
+import { UserLogoutOutputDto } from './dto/user.logout.dto';
+import { UserWithdrawalOutputDto } from './dto/user.withdrawal.dto';
+import { UserFollowInputDto, UserFollowOutputDto } from './dto/user.follow.dto';
 
 @Injectable()
 export class UserService {
   private logger = new Logger('UserService');
   constructor(private jwtService: JwtService) {}
 
-  async userIdDuplicate(userIdDuplicateInputDto: UserIdDuplicateInputDto) {
+  async userIdDuplicate(
+    userIdDuplicateInputDto: UserIdDuplicateInputDto,
+  ): Promise<UserIdDuplicateOutputDto> {
     const { user_id } = userIdDuplicateInputDto;
 
     const conn = getConnection();
@@ -40,17 +61,18 @@ export class UserService {
     );
 
     this.logger.verbose(`UserId: ${user_id} 중복체크`);
+
     return found
-      ? Object.assign({
+      ? {
           statusCode: 200,
           message: '아이디 중복체크 조회 성공',
           duplicate: 'true',
-        })
-      : Object.assign({
+        }
+      : {
           statusCode: 200,
           message: '아이디 중복체크 조회 성공',
           duplicate: 'false',
-        });
+        };
   }
 
   private makeSignature(): string {
@@ -75,7 +97,7 @@ export class UserService {
     return signature.toString();
   }
 
-  private sendSMS(phone_number: string) {
+  private sendSMS(phone_number: number) {
     const number: number =
       Math.floor(Math.random() * (999999 - 111111 + 1)) + 111111;
     const body = {
@@ -104,57 +126,63 @@ export class UserService {
       return new InternalServerErrorException();
     });
 
-    this.logger.verbose(`휴대폰 인증 번호 생성 성공`);
-    return Object.assign({
-      statusCode: 200,
-      message: '휴대폰 인증 번호 생성 성공',
-      code: number,
-    });
+    return number;
   }
 
-  async userSignupAuthPhone(userAuthPhoneInputDto: UserAuthPhoneInputDto) {
+  async userSignupAuthPhone(
+    userAuthPhoneInputDto: UserAuthPhoneInputDto,
+  ): Promise<UserAuthPhoneOutputDto> {
     const { phone_number } = userAuthPhoneInputDto;
     const conn = getConnection();
 
     const [found] = await conn.query(
-      `SELECT USER_ID FROM USER WHERE PHONE_NUM='${phone_number}' AND METHOD='general' AND STATUS='P'`,
+      `SELECT USER_ID FROM USER WHERE PHONE_NUM='${phone_number}' AND ROLE_ID=2 AND STATUS='P'`,
     );
 
     if (!found) {
-      return await this.sendSMS(phone_number);
+      const number = this.sendSMS(phone_number);
+
+      this.logger.verbose(`휴대폰 인증 번호 생성 성공`);
+      return {
+        statusCode: 200,
+        message: '휴대폰 인증 번호 생성 성공',
+        code: number,
+      };
     }
 
     this.logger.verbose(`일반 회원가입 휴대폰 인증 실패`);
-    return Object.assign({
-      statusCode: 400,
-      message: '등록된 휴대폰 번호가 존재합니다.',
-    });
+    throw new HttpException(
+      '등록된 휴대폰 번호가 존재합니다.',
+      HttpStatus.UNAUTHORIZED,
+    );
   }
 
-  async userSignupAuthPhoneTest(userAuthPhoneInputDto: UserAuthPhoneInputDto) {
+  async userSignupAuthPhoneTest(
+    userAuthPhoneInputDto: UserAuthPhoneInputDto,
+  ): Promise<UserAuthPhoneOutputDto> {
     const { phone_number } = userAuthPhoneInputDto;
     const conn = getConnection();
 
     const [found] = await conn.query(
-      `SELECT USER_ID FROM USER WHERE PHONE_NUM='${phone_number}' AND METHOD='general' AND STATUS='P'`,
+      `SELECT USER_ID FROM USER WHERE PHONE_NUM='${phone_number}' AND ROLE_ID=2 AND STATUS='P'`,
     );
 
     if (!found) {
       const number: number =
         Math.floor(Math.random() * (999999 - 111111 + 1)) + 111111;
       this.logger.verbose(`휴대폰 인증 테스트 번호 생성 성공`);
-      return Object.assign({
+      return {
         statusCode: 200,
         message: '휴대폰 인증 번호 생성 성공',
         code: number,
-      });
+      };
     }
 
     this.logger.verbose(`일반 회원가입 휴대폰 인증 실패`);
-    return Object.assign({
-      statusCode: 400,
-      message: '등록된 휴대폰 번호가 존재합니다.',
-    });
+    throw new HttpException(
+      '등록된 휴대폰 번호가 존재합니다.',
+      HttpStatus.UNAUTHORIZED,
+    );
   }
 
   async passwordFirstTest(passwordTestInputDto: PasswordTestInputDto) {
@@ -174,39 +202,40 @@ export class UserService {
     };
   }
 
-  async getFindUserId(userFindIdInputDto: UserFindIdInputDto) {
+  async getFindUserId(
+    userFindIdInputDto: UserFindIdInputDto,
+  ): Promise<UserFindIdOutputDto> {
     const { name, email } = userFindIdInputDto;
 
     const conn = getConnection();
     const [found] = await conn.query(
-      `SELECT USER_ID FROM USER WHERE NAME='${name}' AND EMAIL='${email}' AND STATUS='P' AND METHOD='general'`,
+      `SELECT USER_ID FROM USER WHERE NAME='${name}' AND EMAIL='${email}' AND STATUS='P' `,
     );
 
     if (found) {
       this.logger.verbose(`User: ${found.USER_ID} 아이디 찾기 성공`);
-      return Object.assign({
-        statusCode: 201,
+      return {
+        statusCode: 200,
         message: '유저 아이디 조회 성공',
         user_id: found.USER_ID,
-      });
+      };
     }
 
-    return Object.assign({
-      statusCode: 201,
-      message: '가입된 회원정보가 없습니다.',
-      user_id: null,
-    });
+    throw new HttpException(
+      '가입된 회원정보가 없습니다.',
+      HttpStatus.BAD_REQUEST,
+    );
   }
 
   async generalChangePassword(
     user_id: string,
     passwordChangeInputDto: PasswordChangeInputDto,
-  ) {
+  ): Promise<PasswordChangeOutputDto> {
     const { original_password, change_password } = passwordChangeInputDto;
 
     const conn = getConnection();
     const [user] = await conn.query(
-      `SELECT USER_ID, PASSWORD FROM USER WHERE USER_ID='${user_id}' AND STATUS='P' AND METHOD='general' AND VERIFY='Y'`,
+      `SELECT USER_ID, PASSWORD FROM USER WHERE USER_ID='${user_id}' AND STATUS='P' AND ROLE_ID=2 AND VERIFY='Y'`,
     );
 
     if (user && (await bcrypt.compare(change_password, user.PASSWORD))) {
@@ -223,24 +252,27 @@ export class UserService {
 
       await conn.query(
         `UPDATE USER SET PASSWORD='${hashedPassword}', UPDATE_DT=NOW(), UPDATE_ID='${user_id}' 
-        WHERE USER_ID='${user_id}' AND STATUS='P' AND METHOD='general' AND VERIFY='Y'`,
+        WHERE USER_ID='${user_id}' AND STATUS='P' AND ROLE_ID=2 AND VERIFY='Y'`,
       );
 
       this.logger.verbose(`User ${user_id} 일반 회원 비밀번호 변경 성공`);
-      return Object.assign({
+      return {
         statusCode: 201,
         message: '일반 회원 비밀번호 변경 성공',
-      });
+      };
     } else {
       this.logger.warn(`User ${user_id} 일반 회원 비밀번호 변경 실패`);
-      return Object.assign({
-        statusCode: 400,
-        message: '일반 회원 비밀번호 변경 실패',
-      });
+      throw new HttpException(
+        '일반 회원 비밀번호 변경 실패',
+        HttpStatus.BAD_REQUEST,
+      );
     }
   }
 
-  async generalSignUp(userSignupInputDto: UserSignupInputDto, file: string) {
+  async generalSignUp(
+    userSignupInputDto: UserSignupInputDto,
+    file: string,
+  ): Promise<UserSignupOutputDto> {
     const {
       user_id,
       password,
@@ -291,33 +323,34 @@ export class UserService {
       if (phone_verify === 'Y') {
         await conn.query(sql, params);
         this.logger.verbose(`User ${user_id} 일반 회원가입 성공`);
-        return Object.assign({
+        return {
           statusCode: 201,
           message: '일반 회원가입 성공',
-        });
+        };
       } else {
-        this.logger.warn(`휴대폰 인증 실패`);
-        return Object.assign({
-          statusCode: 406,
-          message: '휴대폰 인증 실패',
-        });
+        throw new UnauthorizedException();
       }
     } catch (error) {
       this.logger.error(`일반 회원가입 실패
       Error: ${error}`);
       if (error.code === 'ER_DUP_ENTRY') {
         throw new ConflictException(`${error.sqlMessage}`);
+      } else if (error.response.statusCode === 401) {
+        this.logger.warn(`휴대폰 인증 실패`);
+        throw new UnauthorizedException(`휴대폰 인증 실패`);
       } else {
         throw new InternalServerErrorException();
       }
     }
   }
 
-  async generalLogin(userLoginInputDto: UserLoginInputDto) {
+  async generalLogin(
+    userLoginInputDto: UserLoginInputDto,
+  ): Promise<UserLoginOutputDto> {
     const { user_id, password } = userLoginInputDto;
     const conn = getConnection();
     const [user] = await conn.query(
-      `SELECT USER_ID, PASSWORD FROM USER WHERE USER_ID='${user_id}' AND STATUS='P' AND METHOD='general'`,
+      `SELECT USER_ID, PASSWORD FROM USER WHERE USER_ID='${user_id}' AND STATUS='P' AND ROLE_ID=2`,
     );
 
     if (user && (await bcrypt.compare(password, user.PASSWORD))) {
@@ -331,20 +364,25 @@ export class UserService {
 
       await conn.query(
         `UPDATE USER SET REFRESH_TOKEN='${refreshToken}', UPDATE_DT=NOW(), UPDATE_ID='${user_id}' 
-         WHERE USER_ID='${user_id}' AND STATUS='P' AND METHOD='general'`,
+         WHERE USER_ID='${user_id}' AND STATUS='P'`,
       );
 
-      const loginObject = Object.assign({
+      const loginObject = {
         statusCode: 201,
         message: '로그인 성공',
         accessToken: accessToken,
         refreshToken: refreshToken,
-      });
+      };
 
       this.logger.verbose(`User ${user_id} 일반 로그인 성공
       Payload: ${JSON.stringify(loginObject)}`);
 
-      return loginObject;
+      return {
+        statusCode: 201,
+        message: '로그인 성공',
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+      };
     } else {
       this.logger.warn(`User ${user_id} 일반 로그인 실패`);
       throw new UnauthorizedException('로그인 실패');
@@ -354,7 +392,7 @@ export class UserService {
   async addUserProfile(
     user_id: string,
     profileDetailInputDto: ProfileDetailInputDto,
-  ) {
+  ): Promise<ProfileDetailOutputDto> {
     const { name, birth, phone_num, address, detail_address, phone_verify } =
       profileDetailInputDto;
 
@@ -379,10 +417,10 @@ export class UserService {
            WHERE USER_ID='${user_id}' AND STATUS='P'`,
         );
         this.logger.verbose(`User ${user_id} 회원 프로필 추가정보 등록 성공`);
-        return Object.assign({
+        return {
           statusCode: 201,
           message: '회원 프로필 추가정보 등록 성공',
-        });
+        };
       } catch (error) {
         this.logger.error(`회원 프로필 추가정보 등록 실패
         Error: ${error}`);
@@ -394,14 +432,14 @@ export class UserService {
       }
     } else {
       this.logger.verbose(`User ${user_id} 회원 프로필 추가정보 등록 실패`);
-      return Object.assign({
-        statusCode: 400,
-        message: '회원 프로필 추가정보가 등록된 회원 입니다.',
-      });
+      throw new HttpException(
+        '회원 프로필 추가정보가 등록된 회원 입니다.',
+        HttpStatus.BAD_REQUEST,
+      );
     }
   }
 
-  async getUserProfile(user_id: string) {
+  async getUserProfile(user_id: string): Promise<SelectProfileOutputDto> {
     const conn = getConnection();
     const [user] = await conn.query(
       `SELECT NAME AS name, BIRTH AS birth, EMAIL AS email, PHONE_NUM AS phone_num, ADDRESS AS address, 
@@ -411,24 +449,21 @@ export class UserService {
 
     if (user) {
       this.logger.verbose(`User ${user_id} 회원 프로필 조회 성공`);
-      return Object.assign({
+      return {
         statusCode: 200,
         message: '회원 프로필 조회 성공',
         data: user,
-      });
+      };
     } else {
       this.logger.verbose(`User ${user_id} 회원 프로필 조회 실패`);
-      return Object.assign({
-        statusCode: 400,
-        message: '회원 프로필 조회 실패',
-      });
+      throw new HttpException('회원 프로필 조회 실패', HttpStatus.BAD_REQUEST);
     }
   }
 
   async modifyUserProfile(
     user_id: string,
     modifyProfileDetailInputDto: ModifyProfileDetailInputDto,
-  ) {
+  ): Promise<ModifyProfileDetailOutputDto> {
     const { name, birth, email, phone_num, address, detail_address } =
       modifyProfileDetailInputDto;
     const conn = getConnection();
@@ -441,10 +476,10 @@ export class UserService {
       );
 
       this.logger.verbose(`User ${user_id} 회원 프로필 수정 성공`);
-      return Object.assign({
+      return {
         statusCode: 201,
         message: '회원 프로필 수정 성공',
-      });
+      };
     } catch (error) {
       this.logger.error(`회원 프로필 추가정보 수정 실패
       Error: ${error}`);
@@ -456,7 +491,10 @@ export class UserService {
     }
   }
 
-  async modifyUserProfileImg(user_id: string, file: string) {
+  async modifyUserProfileImg(
+    user_id: string,
+    file: string,
+  ): Promise<ModifyProfileImgOutputDto> {
     if (file) {
       const generatedFile = createImageURL(file);
       const conn = getConnection();
@@ -467,20 +505,88 @@ export class UserService {
       );
 
       this.logger.verbose(`User ${user_id} 회원 프로필 이미지 수정 성공`);
-      return Object.assign({
+      return {
         statusCode: 201,
         message: '회원 프로필 이미지 수정 성공',
-      });
+      };
     }
 
     this.logger.verbose(`User ${user_id} 회원 프로필 이미지 수정 실패`);
-    return Object.assign({
-      statusCode: 400,
-      message: '회원 프로필 이미지 수정 실패',
-    });
+    throw new HttpException(
+      '회원 프로필 이미지 수정 실패',
+      HttpStatus.BAD_REQUEST,
+    );
   }
 
-  async userLogout(user_id: string) {
+  async userFollow(
+    user_id: string,
+    userFollowInputDto: UserFollowInputDto,
+  ): Promise<UserFollowOutputDto> {
+    const { follow_user_id } = userFollowInputDto;
+    const conn = getConnection();
+
+    const [found] = await conn.query(
+      `SELECT USER_ID AS user_id FROM USER WHERE USER_ID='${follow_user_id}' AND STATUS='P'`,
+    );
+
+    if (!found) {
+      throw new HttpException(
+        '존재하지 않는 유저입니다.',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    if (user_id === found.user_id) {
+      throw new HttpException(
+        '자기 자신을 팔로우 할 수 없습니다.',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const [existFollow] = await conn.query(
+      `SELECT FOLLOW_YN AS follow_yn FROM FOLLOW WHERE USER_ID='${user_id}' AND FOLLOWING_ID='${follow_user_id}'`,
+    );
+
+    if (existFollow) {
+      let follow_yn = '';
+
+      if (existFollow.follow_yn === 'Y') {
+        follow_yn = 'N';
+      } else {
+        follow_yn = 'Y';
+      }
+      await conn.query(
+        `UPDATE FOLLOW SET FOLLOW_YN='${follow_yn}', UPDATE_DT=NOW(), UPDATE_ID='${user_id}'
+         WHERE USER_ID='${user_id}' AND FOLLOWING_ID='${follow_user_id}'`,
+      );
+
+      if (existFollow.follow_yn === 'Y') {
+        return {
+          statusCode: 201,
+          message: '언팔로우 성공',
+          follow: 'unFollow',
+        };
+      } else {
+        return {
+          statusCode: 201,
+          message: '팔로우 성공',
+          follow: 'follow',
+        };
+      }
+    }
+    const sql = `INSERT INTO FOLLOW(USER_ID, FOLLOWING_ID, FOLLOW_YN, INSERT_DT, INSERT_ID)
+                 VALUES(?,?,'Y',NOW(),?)`;
+    const params = [user_id, follow_user_id, user_id];
+
+    await conn.query(sql, params);
+
+    return {
+      statusCode: 201,
+      message: '팔로우 성공',
+      follow: 'follow',
+    };
+  }
+
+  async userLogout(user_id: string): Promise<UserLogoutOutputDto> {
     const conn = getConnection();
     await conn.query(
       `UPDATE USER SET REFRESH_TOKEN=NULL, UPDATE_DT=NOW(), UPDATE_ID='${user_id}' 
@@ -488,13 +594,13 @@ export class UserService {
     );
 
     this.logger.verbose(`User ${user_id} 회원 로그아웃 성공`);
-    return Object.assign({
+    return {
       statusCode: 200,
       message: '회원 로그아웃 성공',
-    });
+    };
   }
 
-  async userWithdrawal(user_id: string) {
+  async userWithdrawal(user_id: string): Promise<UserWithdrawalOutputDto> {
     const conn = getConnection();
     await conn.query(
       `UPDATE USER SET STATUS='D', NAME=NULL, PHONE_NUM=NULL, EMAIL=NULL, 
@@ -503,9 +609,9 @@ export class UserService {
     );
 
     this.logger.verbose(`User ${user_id} 회원 탈퇴 성공`);
-    return Object.assign({
+    return {
       statusCode: 200,
       message: '회원 탈퇴 성공',
-    });
+    };
   }
 }

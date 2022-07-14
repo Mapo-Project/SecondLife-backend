@@ -15,7 +15,7 @@ export class UserFindIdInputDto {
 //일반 회원 아이디 찾기 Output 데이터
 export class UserFindIdOutputDto {
   @ApiProperty({
-    example: '201',
+    example: 200,
     description: '상태코드',
   })
   statusCode: number;

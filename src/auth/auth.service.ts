@@ -1,6 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { UserSocialLoginOutputDto } from 'src/user/dto/user.login.dto';
 import { getConnection } from 'typeorm';
+import { AccessTokenReissuanceOutputDto } from './dto/acess.token.dto';
 import { UserDto } from './dto/user.dto';
 import uuidRandom from './uuidRandom';
 
@@ -9,7 +11,7 @@ export class AuthService {
   private logger = new Logger('AuthService');
   constructor(private jwtService: JwtService) {}
 
-  async loginCallBack(userDto: UserDto) {
+  async loginCallBack(userDto: UserDto): Promise<UserSocialLoginOutputDto> {
     const { social_id, method, email, profile_img } = userDto;
     const verify = 'N';
     const status = 'P';
@@ -54,13 +56,13 @@ export class AuthService {
 
       await conn.query(sql, params);
 
-      return Object.assign({
+      return {
         statusCode: 200,
         message: '로그인 성공',
         verify: verify,
         accessToken: accessToken,
         refreshToken: refreshToken,
-      });
+      };
     }
 
     const [user] = await conn.query(
@@ -93,7 +95,9 @@ export class AuthService {
     });
   }
 
-  async accessTokenReissuance(refreshToken: string) {
+  async accessTokenReissuance(
+    refreshToken: string,
+  ): Promise<AccessTokenReissuanceOutputDto> {
     const conn = getConnection();
     const [found] = await conn.query(
       `SELECT USER_ID FROM USER WHERE REFRESH_TOKEN='${refreshToken}' AND STATUS='P'`,
@@ -107,16 +111,12 @@ export class AuthService {
       });
 
       this.logger.verbose(`User ${user_id} accessToken 재발급 성공`);
-      return Object.assign({
+      return {
         statusCode: 200,
         message: 'accessToken 재발급 성공',
         accessToken: accessToken,
-      });
+      };
     }
-
-    return Object.assign({
-      statusCode: 400,
-      message: 'accessToken 재발급 실패',
-    });
+    throw new HttpException('accessToken 재발급 실패', HttpStatus.BAD_REQUEST);
   }
 }
