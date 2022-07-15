@@ -30,13 +30,13 @@ export class UserFollowOutputDto {
     example: 'follow',
     description: '팔로우 여부',
   })
-  follow: string;
+  follow: 'follow' | 'unFollow';
 }
 
 //회원 팔로잉 데이터
 export class UserFollowwingDto {
-  @ApiProperty({ example: 'user_id', description: '아이디' })
-  user_id: string;
+  @ApiProperty({ example: 'secondLife', description: '아이디' })
+  following_user_id: string;
 
   @ApiProperty({ example: 'img', description: '프로필 이미지' })
   profile_img: string;
@@ -57,7 +57,7 @@ export class UserFollowwingOutputDto {
   message: string;
 
   @ApiProperty({
-    example: '7',
+    example: 1,
     description: '팔로잉 수',
   })
   count: number;

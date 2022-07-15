@@ -3,7 +3,6 @@ import {
   Controller,
   Delete,
   Get,
-  Param,
   Post,
   Query,
   Req,
@@ -447,18 +446,23 @@ export class UserController {
   }
 
   //회원 팔로잉 조회
-  @Post('following/select')
+  @Get('following/select')
   @ApiOperation({
     summary: '회원 팔로잉 조회 API(완료)',
     description: '회원 팔로잉 조회 입니다. 토큰 값 필수!',
   })
   @ApiOkResponse({
+    description: '회원 팔로잉 조회 성공',
     type: UserFollowwingOutputDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: '회원 팔로잉 조회 실패',
   })
   @ApiBearerAuth()
   @UseGuards(AuthGuard())
-  async getUserFollowing(@Req() req) {
-    // return await this.userService.getUserFollowing(req.user);
+  async getUserFollowing(@Req() req): Promise<UserFollowwingOutputDto> {
+    return await this.userService.getUserFollowing(req.user);
   }
 
   //회원 로그아웃

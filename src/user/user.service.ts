@@ -43,7 +43,11 @@ import {
 } from './dto/user.find.id.dto';
 import { UserLogoutOutputDto } from './dto/user.logout.dto';
 import { UserWithdrawalOutputDto } from './dto/user.withdrawal.dto';
-import { UserFollowInputDto, UserFollowOutputDto } from './dto/user.follow.dto';
+import {
+  UserFollowInputDto,
+  UserFollowOutputDto,
+  UserFollowwingOutputDto,
+} from './dto/user.follow.dto';
 
 @Injectable()
 export class UserService {
@@ -526,16 +530,18 @@ export class UserService {
     const conn = getConnection();
 
     const [found] = await conn.query(
-      `SELECT USER_ID AS user_id FROM USER WHERE USER_ID='${follow_user_id}' AND STATUS='P'`,
+      `SELECT USER_ID AS user_id FROM USER WHERE USER_ID='${follow_user_id}' AND STATUS='P' AND VERIFY='Y'`,
     );
 
     if (!found) {
+      this.logger.verbose(`User ${user_id} 팔로우 ${follow_user_id} 실패`);
       throw new HttpException(
         '존재하지 않는 유저입니다.',
         HttpStatus.NOT_FOUND,
       );
     }
     if (user_id === found.user_id) {
+      this.logger.verbose(`User ${user_id} 자기 자신을 팔로우 할 수 없습니다.`);
       throw new HttpException(
         '자기 자신을 팔로우 할 수 없습니다.',
         HttpStatus.BAD_REQUEST,
@@ -543,7 +549,7 @@ export class UserService {
     }
 
     const [existFollow] = await conn.query(
-      `SELECT FOLLOW_YN AS follow_yn FROM FOLLOW WHERE USER_ID='${user_id}' AND FOLLOWING_ID='${follow_user_id}'`,
+      `SELECT FOLLOW_YN AS follow_yn FROM FOLLOW WHERE USER_ID='${user_id}' AND FOLLOWING_USER_ID='${follow_user_id}'`,
     );
 
     if (existFollow) {
@@ -556,16 +562,18 @@ export class UserService {
       }
       await conn.query(
         `UPDATE FOLLOW SET FOLLOW_YN='${follow_yn}', UPDATE_DT=NOW(), UPDATE_ID='${user_id}'
-         WHERE USER_ID='${user_id}' AND FOLLOWING_ID='${follow_user_id}'`,
+         WHERE USER_ID='${user_id}' AND FOLLOWING_USER_ID='${follow_user_id}'`,
       );
 
       if (existFollow.follow_yn === 'Y') {
+        this.logger.verbose(`User ${user_id} 언팔로우 ${follow_user_id} 성공`);
         return {
           statusCode: 201,
           message: '언팔로우 성공',
           follow: 'unFollow',
         };
       } else {
+        this.logger.verbose(`User ${user_id} 팔로우 ${follow_user_id} 성공`);
         return {
           statusCode: 201,
           message: '팔로우 성공',
@@ -573,16 +581,37 @@ export class UserService {
         };
       }
     }
-    const sql = `INSERT INTO FOLLOW(USER_ID, FOLLOWING_ID, FOLLOW_YN, INSERT_DT, INSERT_ID)
+    const sql = `INSERT INTO FOLLOW(USER_ID, FOLLOWING_USER_ID, FOLLOW_YN, INSERT_DT, INSERT_ID)
                  VALUES(?,?,'Y',NOW(),?)`;
     const params = [user_id, follow_user_id, user_id];
 
     await conn.query(sql, params);
 
+    this.logger.verbose(`User ${user_id} 팔로우 ${follow_user_id} 성공`);
     return {
       statusCode: 201,
       message: '팔로우 성공',
       follow: 'follow',
+    };
+  }
+
+  async getUserFollowing(user_id: string): Promise<UserFollowwingOutputDto> {
+    const conn = getConnection();
+    const [count] = await conn.query(
+      `SELECT COUNT(FOLLOWING_USER_ID) AS count FROM FOLLOW WHERE USER_ID='${user_id}' AND FOLLOW_YN='Y'`,
+    );
+    const following = await conn.query(
+      `SELECT FOLLOWING_USER_ID AS following_user_id, PROFILE_IMG AS profile_img FROM FOLLOW INNER JOIN USER 
+       ON FOLLOW.FOLLOWING_USER_ID = USER.USER_ID 
+       WHERE FOLLOW.USER_ID='${user_id}' AND FOLLOW.FOLLOW_YN='Y'`,
+    );
+
+    this.logger.verbose(`User ${user_id} 팔로잉 조회 성공`);
+    return {
+      statusCode: 200,
+      message: '회원 팔로잉 조회 성공',
+      count: parseInt(count.count),
+      data: following,
     };
   }
 
