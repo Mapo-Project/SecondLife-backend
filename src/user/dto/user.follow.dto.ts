@@ -38,6 +38,9 @@ export class UserFollowwingDto {
   @ApiProperty({ example: 'secondLife', description: '아이디' })
   following_user_id: string;
 
+  @ApiProperty({ example: '셀러', description: '이름' })
+  name: string;
+
   @ApiProperty({ example: 'img', description: '프로필 이미지' })
   profile_img: string;
 }

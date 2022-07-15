@@ -10,14 +10,18 @@ import {
 
 //일반 회원가입 Input 데이터
 export class UserSignupInputDto {
-  @ApiProperty({ example: 'id', description: '아이디' })
+  @ApiProperty({ example: 'test', description: '아이디' })
   @IsString()
   @IsNotEmpty()
   @MinLength(4)
   @MaxLength(20)
   user_id: string;
 
-  @ApiProperty({ example: 'password', description: '비밀번호' })
+  @ApiProperty({
+    example:
+      'OQJ5fKSFQyd+geo1u8YkqYXMxUcdhOeCcgSEg2u46ykY8Wt7MaGp4nxOXFIGGsuAFsUihl3YDZtPs3ak5VC+rA==',
+    description: '비밀번호',
+  })
   @IsString()
   @IsNotEmpty()
   //정규 표현식

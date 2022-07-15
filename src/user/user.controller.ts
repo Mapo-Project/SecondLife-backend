@@ -97,7 +97,7 @@ export class UserController {
     type: UserAuthPhoneOutputDto,
   })
   @ApiResponse({
-    status: 400,
+    status: 409,
     description: '등록된 휴대폰 번호가 존재합니다.',
   })
   async userSignupAuthPhone(
@@ -117,7 +117,7 @@ export class UserController {
     type: UserAuthPhoneOutputDto,
   })
   @ApiResponse({
-    status: 400,
+    status: 409,
     description: '등록된 휴대폰 번호가 존재합니다.',
   })
   async userSignupAuthPhoneTest(
@@ -221,10 +221,6 @@ export class UserController {
   @ApiResponse({
     status: 401,
     description: '휴대폰 인증 실패',
-  })
-  @ApiResponse({
-    status: 404,
-    description: '지원하지 않는 이미지 형식',
   })
   @ApiResponse({
     status: 409,
@@ -394,15 +390,11 @@ export class UserController {
   })
   @ApiResponse({
     status: 400,
-    description: '회원 프로필 이미지 수정 실패',
+    description: 'Error: Bad Request',
   })
   @ApiResponse({
     status: 401,
     description: '인증 오류',
-  })
-  @ApiResponse({
-    status: 404,
-    description: '지원하지 않는 이미지 형식',
   })
   @ApiResponse({
     status: 413,

@@ -157,7 +157,7 @@ export class UserService {
     this.logger.verbose(`일반 회원가입 휴대폰 인증 실패`);
     throw new HttpException(
       '등록된 휴대폰 번호가 존재합니다.',
-      HttpStatus.UNAUTHORIZED,
+      HttpStatus.CONFLICT,
     );
   }
 
@@ -185,7 +185,7 @@ export class UserService {
     this.logger.verbose(`일반 회원가입 휴대폰 인증 실패`);
     throw new HttpException(
       '등록된 휴대폰 번호가 존재합니다.',
-      HttpStatus.UNAUTHORIZED,
+      HttpStatus.CONFLICT,
     );
   }
 
@@ -288,6 +288,18 @@ export class UserService {
       detail_address,
       phone_verify,
     } = userSignupInputDto;
+    const conn = getConnection();
+    const [found] = await conn.query(
+      `SELECT USER_ID FROM USER WHERE PHONE_NUM='${phone_num}' AND ROLE_ID=2 AND STATUS='P'`,
+    );
+
+    if (found) {
+      this.logger.verbose(`일반 회원가입 실패`);
+      throw new HttpException(
+        '등록된 휴대폰 번호가 존재합니다.',
+        HttpStatus.CONFLICT,
+      );
+    }
 
     if (!file) {
       file = process.env.PROFILE_IMG_DEFAULT;
@@ -303,7 +315,6 @@ export class UserService {
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const conn = getConnection();
     const sql = `INSERT INTO USER(USER_ID, ROLE_ID, PASSWORD, NAME, BIRTH, EMAIL, PHONE_NUM, ADDRESS, 
                  DETAIL_ADDRESS, METHOD, VERIFY, STATUS, INSERT_DT, INSERT_ID, PROFILE_IMG) 
                  VALUES(?,?,?,?,?,?,?,?,?,?,?,?,NOW(),?,?)`;
@@ -601,7 +612,7 @@ export class UserService {
       `SELECT COUNT(FOLLOWING_USER_ID) AS count FROM FOLLOW WHERE USER_ID='${user_id}' AND FOLLOW_YN='Y'`,
     );
     const following = await conn.query(
-      `SELECT FOLLOWING_USER_ID AS following_user_id, PROFILE_IMG AS profile_img FROM FOLLOW INNER JOIN USER 
+      `SELECT FOLLOWING_USER_ID AS following_user_id, NAME AS name, PROFILE_IMG AS profile_img FROM FOLLOW INNER JOIN USER 
        ON FOLLOW.FOLLOWING_USER_ID = USER.USER_ID 
        WHERE FOLLOW.USER_ID='${user_id}' AND FOLLOW.FOLLOW_YN='Y'`,
     );

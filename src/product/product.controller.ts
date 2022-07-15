@@ -50,15 +50,11 @@ export class ProductController {
   })
   @ApiResponse({
     status: 400,
-    description: '상품 등록 실패',
+    description: 'Error: Bad Request',
   })
   @ApiResponse({
     status: 401,
     description: '인증 오류',
-  })
-  @ApiResponse({
-    status: 404,
-    description: '지원하지 않는 이미지 형식',
   })
   @ApiResponse({
     status: 413,
@@ -72,7 +68,7 @@ export class ProductController {
     @UploadedFile() file: string,
     @Body(ValidationPipe)
     productRegistationInputDto: ProductRegistationInputDto,
-  ) {
+  ): Promise<ProductRegistationOutputDto> {
     return await this.productService.registrationProduct(
       req.user,
       file,
@@ -90,10 +86,10 @@ export class ProductController {
     type: ProductLatestOutputDto,
   })
   @ApiResponse({
-    status: 400,
+    status: 404,
     description: '상품 최신순 조회 실패',
   })
-  async getProductLatest() {
+  async getProductLatest(): Promise<ProductLatestOutputDto> {
     return await this.productService.getProductLatest();
   }
 }
