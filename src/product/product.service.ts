@@ -12,6 +12,10 @@ import {
   ProductRegistationInputDto,
   ProductRegistationOutputDto,
 } from './dto/product.registration.dto';
+import {
+  ProductWishInputDto,
+  ProductWishOutputDto,
+} from './dto/pruduct.wish.dto';
 
 @Injectable()
 export class ProductService {
@@ -67,5 +71,78 @@ export class ProductService {
 
     this.logger.verbose(`상품 최신순 조회 실패`);
     throw new HttpException('상품 최신순 조회 실패', HttpStatus.NOT_FOUND);
+  }
+
+  async productWish(
+    user_id: string,
+    productWishInputDto: ProductWishInputDto,
+  ): Promise<ProductWishOutputDto> {
+    const { product_id } = productWishInputDto;
+    const conn = getConnection();
+
+    const [found] = await conn.query(
+      `SELECT USER_ID AS user_id FROM PRODUCT WHERE PRODUCT_ID='${product_id}' AND USE_YN='Y'`,
+    );
+
+    if (!found) {
+      this.logger.verbose(`User ${user_id} 상품 ${product_id} 찜 실패`);
+      throw new HttpException(
+        '존재하지 않는 상품 입니다.',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    if (user_id === found.user_id) {
+      this.logger.verbose(`User ${user_id} 자기 상품을 찜 할 수 없습니다.`);
+      throw new HttpException(
+        '자기 상품을 찜 할 수 없습니다.',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const [existWish] = await conn.query(
+      `SELECT WISH_YN AS wish_yn FROM WISH_LIST WHERE USER_ID='${user_id}' AND PRODUCT_ID='${product_id}'`,
+    );
+
+    if (existWish) {
+      let wish_yn = '';
+
+      if (existWish.wish_yn === 'Y') {
+        wish_yn = 'N';
+      } else {
+        wish_yn = 'Y';
+      }
+      await conn.query(
+        `UPDATE WISH_LIST SET WISH_YN='${wish_yn}', UPDATE_DT=NOW(), UPDATE_ID='${user_id}'
+         WHERE USER_ID='${user_id}' AND PRODUCT_ID='${product_id}'`,
+      );
+
+      if (existWish.wish_yn === 'Y') {
+        this.logger.verbose(`User ${user_id} 상품 ${product_id} 찜 해제 성공`);
+        return {
+          statusCode: 201,
+          message: '상품 찜 해제 성공',
+          wish: 'unWish',
+        };
+      } else {
+        this.logger.verbose(`User ${user_id} 상품 ${product_id} 찜 등록 성공`);
+        return {
+          statusCode: 201,
+          message: '상품 찜 등록 성공',
+          wish: 'wish',
+        };
+      }
+    }
+    const sql = `INSERT INTO WISH_LIST(USER_ID, PRODUCT_ID, WISH_YN, INSERT_DT, INSERT_ID)
+                 VALUES(?,?,'Y',NOW(),?)`;
+    const params = [user_id, product_id, user_id];
+
+    await conn.query(sql, params);
+
+    this.logger.verbose(`User ${user_id} 상품 ${product_id} 찜 등록 성공`);
+    return {
+      statusCode: 201,
+      message: '상품 찜 등록 성공',
+      wish: 'wish',
+    };
   }
 }

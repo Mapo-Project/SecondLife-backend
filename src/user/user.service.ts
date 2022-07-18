@@ -70,12 +70,12 @@ export class UserService {
       ? {
           statusCode: 200,
           message: '아이디 중복체크 조회 성공',
-          duplicate: 'true',
+          duplicate: 'duplicate',
         }
       : {
           statusCode: 200,
           message: '아이디 중복체크 조회 성공',
-          duplicate: 'false',
+          duplicate: 'unDuplicate',
         };
   }
 
@@ -607,7 +607,7 @@ export class UserService {
     if (!found) {
       this.logger.verbose(`User ${user_id} 팔로우 ${follow_user_id} 실패`);
       throw new HttpException(
-        '존재하지 않는 유저입니다.',
+        '존재하지 않는 유저 입니다.',
         HttpStatus.NOT_FOUND,
       );
     }

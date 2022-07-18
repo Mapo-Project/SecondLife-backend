@@ -27,8 +27,8 @@ export class UserIdDuplicateOutputDto {
   message: string;
 
   @ApiProperty({
-    example: 'true',
+    example: 'duplicate | unDuplicate',
     description: '중복체크 여부',
   })
-  duplicate: 'true' | 'false';
+  duplicate: 'duplicate' | 'unDuplicate';
 }

@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Param,
   Post,
   Req,
   UploadedFile,
@@ -27,6 +28,10 @@ import {
 } from './dto/product.registration.dto';
 import { ProductLatestOutputDto } from './dto/product.latest.dto';
 import { ProductService } from './product.service';
+import {
+  ProductWishInputDto,
+  ProductWishOutputDto,
+} from './dto/pruduct.wish.dto';
 
 @ApiTags('상품 API')
 @Controller('product')
@@ -78,7 +83,7 @@ export class ProductController {
 
   @Get('select/latest')
   @ApiOperation({
-    summary: '상품 최신순 조회(완료)',
+    summary: '상품 최신순 조회(1차 완료)',
     description: '상품을 최신순으로 최대 14개까지 조회합니다.',
   })
   @ApiOkResponse({
@@ -91,5 +96,32 @@ export class ProductController {
   })
   async getProductLatest(): Promise<ProductLatestOutputDto> {
     return await this.productService.getProductLatest();
+  }
+
+  //상품 찜 등록 / 찜 해제
+  @Post('wish/:product_id')
+  @ApiOperation({
+    summary: '상품 찜 등록 / 찜 해제 API(완료)',
+    description: '상품 찜 등록 / 짐 해제 입니다. 토큰 값 필수!',
+  })
+  @ApiResponse({
+    status: 201,
+    type: ProductWishOutputDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Error: Bad Request',
+  })
+  @ApiResponse({
+    status: 404,
+    description: '존재하지 않는 상품 입니다.',
+  })
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard())
+  async productWish(
+    @Req() req,
+    @Param(ValidationPipe) productWishInputDto: ProductWishInputDto,
+  ): Promise<ProductWishOutputDto> {
+    return await this.productService.productWish(req.user, productWishInputDto);
   }
 }

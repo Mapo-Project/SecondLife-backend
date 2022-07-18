@@ -5,7 +5,7 @@ import { IsNotEmpty } from 'class-validator';
 export class UserFollowInputDto {
   @ApiProperty({
     name: 'follow_user_id',
-    description: '팔로우 / 언팔로우 할 아이디',
+    description: '팔로우 / 언팔로우 할 유제 아이디',
     example: 'secondLife',
   })
   @IsNotEmpty()
@@ -21,13 +21,13 @@ export class UserFollowOutputDto {
   statusCode: number;
 
   @ApiProperty({
-    example: '회원 팔로우 / 언팔로우 성공',
+    example: '회원 팔로우 성공 | 회원 언팔로우 성공',
     description: '설명',
   })
   message: string;
 
   @ApiProperty({
-    example: 'follow',
+    example: 'follow | unFollow',
     description: '팔로우 여부',
   })
   follow: 'follow' | 'unFollow';

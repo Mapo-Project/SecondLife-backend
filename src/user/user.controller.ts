@@ -487,7 +487,7 @@ export class UserController {
   })
   @ApiResponse({
     status: 404,
-    description: '존재하지 않는 유저입니다.',
+    description: '존재하지 않는 유저 입니다.',
   })
   @ApiBearerAuth()
   @UseGuards(AuthGuard())
