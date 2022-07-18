@@ -26,6 +26,6 @@ export class ProductLatestOutputDto {
   })
   message: string;
 
-  @ApiProperty()
+  @ApiProperty({ type: [ProductLatestDto] })
   data: ProductLatestDto;
 }

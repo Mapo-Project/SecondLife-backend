@@ -133,7 +133,7 @@ export class UserService {
     return number;
   }
 
-  async userSignupAuthPhone(
+  async userGeneralSignupAuthPhone(
     userAuthPhoneInputDto: UserAuthPhoneInputDto,
   ): Promise<UserAuthPhoneOutputDto> {
     const { phone_number } = userAuthPhoneInputDto;
@@ -161,7 +161,37 @@ export class UserService {
     );
   }
 
-  async userSignupAuthPhoneTest(
+  async userSocialSignupAuthPhone(
+    user_id: string,
+    userAuthPhoneInputDto: UserAuthPhoneInputDto,
+  ): Promise<UserAuthPhoneOutputDto> {
+    const { phone_number } = userAuthPhoneInputDto;
+    const conn = getConnection();
+
+    const [found] = await conn.query(
+      `SELECT USER_ID FROM USER WHERE PHONE_NUM='${phone_number}' AND 
+       METHOD=(SELECT METHOD FROM USER WHERE USER_ID='${user_id}') AND STATUS='P'`,
+    );
+
+    if (!found) {
+      const number = this.sendSMS(phone_number);
+
+      this.logger.verbose(`휴대폰 인증 번호 생성 성공`);
+      return {
+        statusCode: 200,
+        message: '휴대폰 인증 번호 생성 성공',
+        code: number,
+      };
+    }
+
+    this.logger.verbose(`소셜 회원가입 휴대폰 인증 실패`);
+    throw new HttpException(
+      '등록된 휴대폰 번호가 존재합니다.',
+      HttpStatus.CONFLICT,
+    );
+  }
+
+  async userGeneralSignupAuthPhoneTest(
     userAuthPhoneInputDto: UserAuthPhoneInputDto,
   ): Promise<UserAuthPhoneOutputDto> {
     const { phone_number } = userAuthPhoneInputDto;
@@ -183,6 +213,36 @@ export class UserService {
     }
 
     this.logger.verbose(`일반 회원가입 휴대폰 인증 실패`);
+    throw new HttpException(
+      '등록된 휴대폰 번호가 존재합니다.',
+      HttpStatus.CONFLICT,
+    );
+  }
+
+  async userSocialSignupAuthPhoneTest(
+    user_id: string,
+    userAuthPhoneInputDto: UserAuthPhoneInputDto,
+  ): Promise<UserAuthPhoneOutputDto> {
+    const { phone_number } = userAuthPhoneInputDto;
+    const conn = getConnection();
+
+    const [found] = await conn.query(
+      `SELECT USER_ID FROM USER WHERE PHONE_NUM='${phone_number}' AND 
+       METHOD=(SELECT METHOD FROM USER WHERE USER_ID='${user_id}') AND STATUS='P'`,
+    );
+
+    if (!found) {
+      const number: number =
+        Math.floor(Math.random() * (999999 - 111111 + 1)) + 111111;
+      this.logger.verbose(`휴대폰 인증 테스트 번호 생성 성공`);
+      return {
+        statusCode: 200,
+        message: '휴대폰 인증 번호 생성 성공',
+        code: number,
+      };
+    }
+
+    this.logger.verbose(`소셜 회원가입 휴대폰 인증 실패`);
     throw new HttpException(
       '등록된 휴대폰 번호가 존재합니다.',
       HttpStatus.CONFLICT,
