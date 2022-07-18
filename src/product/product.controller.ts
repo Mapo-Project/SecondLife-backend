@@ -31,6 +31,7 @@ import { ProductService } from './product.service';
 import {
   ProductWishInputDto,
   ProductWishOutputDto,
+  ProductWishSelectOutputDto,
 } from './dto/pruduct.wish.dto';
 
 @ApiTags('상품 API')
@@ -123,5 +124,29 @@ export class ProductController {
     @Param(ValidationPipe) productWishInputDto: ProductWishInputDto,
   ): Promise<ProductWishOutputDto> {
     return await this.productService.productWish(req.user, productWishInputDto);
+  }
+
+  //상품 찜 조회
+  @Get('wish/select')
+  @ApiOperation({
+    summary: '상품 찜 조회 API(완료)',
+    description: '상품 찜 조회 입니다. 토큰 값 필수!',
+  })
+  @ApiOkResponse({
+    description: '상품 찜 조회 성공',
+    type: ProductWishSelectOutputDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: '상품 찜 조회 실패',
+  })
+  @ApiResponse({
+    status: 401,
+    description: '인증 오류',
+  })
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard())
+  async getProductWish(@Req() req): Promise<ProductWishSelectOutputDto> {
+    return await this.productService.getProductWish(req.user);
   }
 }

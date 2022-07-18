@@ -669,7 +669,7 @@ export class UserService {
   async getUserFollowing(user_id: string): Promise<UserFollowwingOutputDto> {
     const conn = getConnection();
     const [count] = await conn.query(
-      `SELECT COUNT(FOLLOWING_USER_ID) AS count FROM FOLLOW WHERE USER_ID='${user_id}' AND FOLLOW_YN='Y'`,
+      `SELECT COUNT(ID) AS count FROM FOLLOW WHERE USER_ID='${user_id}' AND FOLLOW_YN='Y'`,
     );
     const following = await conn.query(
       `SELECT FOLLOWING_USER_ID AS following_user_id, NAME AS name, PROFILE_IMG AS profile_img FROM FOLLOW INNER JOIN USER 
@@ -677,13 +677,17 @@ export class UserService {
        WHERE FOLLOW.USER_ID='${user_id}' AND FOLLOW.FOLLOW_YN='Y'`,
     );
 
-    this.logger.verbose(`User ${user_id} 팔로잉 조회 성공`);
-    return {
-      statusCode: 200,
-      message: '회원 팔로잉 조회 성공',
-      count: parseInt(count.count),
-      data: following,
-    };
+    if (count && following) {
+      this.logger.verbose(`User ${user_id} 팔로잉 조회 성공`);
+      return {
+        statusCode: 200,
+        message: '회원 팔로잉 조회 성공',
+        count: parseInt(count.count),
+        data: following,
+      };
+    }
+
+    throw new HttpException('회원 팔로잉 조회 실패', HttpStatus.BAD_REQUEST);
   }
 
   async userLogout(user_id: string): Promise<UserLogoutOutputDto> {

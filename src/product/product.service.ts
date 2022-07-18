@@ -15,11 +15,12 @@ import {
 import {
   ProductWishInputDto,
   ProductWishOutputDto,
+  ProductWishSelectOutputDto,
 } from './dto/pruduct.wish.dto';
 
 @Injectable()
 export class ProductService {
-  private logger = new Logger('UserSerProductServicevice');
+  private logger = new Logger('ProductService');
   async registrationProduct(
     user_id: string,
     file: string,
@@ -144,5 +145,29 @@ export class ProductService {
       message: '상품 찜 등록 성공',
       wish: 'wish',
     };
+  }
+
+  async getProductWish(user_id: string): Promise<ProductWishSelectOutputDto> {
+    const conn = getConnection();
+    const [count] = await conn.query(
+      `SELECT COUNT(ID) AS count FROM WISH_LIST WHERE USER_ID='${user_id}' AND WISH_YN='Y'`,
+    );
+    const wish = await conn.query(
+      `SELECT WISH_LIST.PRODUCT_ID AS product_id, PRODUCT_IMG AS product_img FROM WISH_LIST INNER JOIN PRODUCT
+       ON WISH_LIST.PRODUCT_ID = PRODUCT.PRODUCT_ID
+       WHERE WISH_LIST.USER_ID='${user_id}' AND WISH_LIST.WISH_YN='Y'`,
+    );
+
+    if (count && wish) {
+      this.logger.verbose(`User ${user_id} 상품 찜 조회 성공`);
+      return {
+        statusCode: 200,
+        message: '상품 찜 조회 성공',
+        count: parseInt(count.count),
+        data: wish,
+      };
+    }
+
+    throw new HttpException('상품 찜 조회 실패', HttpStatus.BAD_REQUEST);
   }
 }
