@@ -7,7 +7,9 @@ import {
 } from '@nestjs/common';
 import { createImageURL } from 'src/user/multerOptions';
 import { getConnection } from 'typeorm';
+import { ProductFollowOutputDto } from './dto/product.follow.dto';
 import { ProductLatestOutputDto } from './dto/product.latest.dto';
+import { ProductPopularityOutputDto } from './dto/product.popularity.dto';
 import {
   ProductRegistationInputDto,
   ProductRegistationOutputDto,
@@ -22,28 +24,50 @@ import {
 export class ProductService {
   private logger = new Logger('ProductService');
 
-  async getProductFollow(user_id: string) {
+  async getProductFollow(user_id: string): Promise<ProductFollowOutputDto> {
     const conn = getConnection();
 
-    const followProduct = await conn.query(
+    const found = await conn.query(
       `SELECT PRODUCT.PRODUCT_ID AS product_id, SIZE AS size, PRICE AS price, PRODUCT_IMG AS product_img 
        FROM FOLLOW LEFT JOIN PRODUCT ON FOLLOW.FOLLOWING_USER_ID = PRODUCT.USER_ID 
        WHERE FOLLOW.USER_ID='${user_id}' AND FOLLOW.FOLLOW_YN='Y' ORDER BY PRODUCT.INSERT_DT DESC LIMIT 6`,
     );
 
-    if (followProduct) {
+    if (found.length !== 0) {
       this.logger.verbose(`User ${user_id} 팔로우 상품 최신순 조회 성공`);
       return {
         statusCode: 200,
         message: '팔로우 상품 최신순 조회 성공',
-        data: followProduct,
+        data: found,
       };
     }
 
     throw new HttpException(
       '팔로우 상품 최신순 조회 실패',
-      HttpStatus.BAD_REQUEST,
+      HttpStatus.NOT_FOUND,
     );
+  }
+
+  async getProductPopularity(): Promise<ProductPopularityOutputDto> {
+    const conn = getConnection();
+
+    const found = await conn.query(
+      `SELECT PRODUCT.PRODUCT_ID AS product_id, COUNT(PRODUCT.PRODUCT_ID) AS wish_count, SIZE AS size, PRICE AS price, PRODUCT_IMG AS product_img 
+       FROM PRODUCT LEFT JOIN WISH_LIST ON PRODUCT.PRODUCT_ID = WISH_LIST.PRODUCT_ID 
+       WHERE WISH_LIST.WISH_YN='Y' GROUP BY PRODUCT.PRODUCT_ID ORDER BY wish_count DESC, PRODUCT.TITLE ASC LIMIT 6`,
+    );
+
+    if (found) {
+      this.logger.verbose(`인기 상품 조회 성공`);
+      return {
+        statusCode: 200,
+        message: '인기 상품 조회 성공',
+        data: found,
+      };
+    }
+
+    this.logger.verbose(`인기 상품 조회 실패`);
+    throw new HttpException('인기 상품 조회 실패', HttpStatus.NOT_FOUND);
   }
 
   async getProductLatest(): Promise<ProductLatestOutputDto> {
@@ -151,7 +175,7 @@ export class ProductService {
        WHERE WISH_LIST.USER_ID='${user_id}' AND WISH_LIST.WISH_YN='Y'`,
     );
 
-    if (count && wish) {
+    if (count && wish.length !== 0) {
       this.logger.verbose(`User ${user_id} 상품 찜 조회 성공`);
       return {
         statusCode: 200,
@@ -161,7 +185,7 @@ export class ProductService {
       };
     }
 
-    throw new HttpException('상품 찜 조회 실패', HttpStatus.BAD_REQUEST);
+    throw new HttpException('상품 찜 조회 실패', HttpStatus.NOT_FOUND);
   }
 
   async registrationProduct(

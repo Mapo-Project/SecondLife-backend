@@ -34,13 +34,14 @@ import {
   ProductWishSelectOutputDto,
 } from './dto/pruduct.wish.dto';
 import { ProductFollowOutputDto } from './dto/product.follow.dto';
+import { ProductPopularityOutputDto } from './dto/product.popularity.dto';
 
 @ApiTags('상품 API')
 @Controller('product')
 export class ProductController {
   constructor(private productService: ProductService) {}
 
-  //팔로우 상품 조회
+  //팔로우 상품 최신순 조회
   @Get('follow/select')
   @ApiOperation({
     summary: '팔로우 상품 최신순 조회 API(완료)',
@@ -51,17 +52,35 @@ export class ProductController {
     type: ProductFollowOutputDto,
   })
   @ApiResponse({
-    status: 400,
-    description: '팔로우 상품 최신순 조회 실패',
-  })
-  @ApiResponse({
     status: 401,
     description: '인증 오류',
   })
+  @ApiResponse({
+    status: 404,
+    description: '팔로우 상품 최신순 조회 실패',
+  })
   @ApiBearerAuth()
   @UseGuards(AuthGuard())
-  async getProductFollow(@Req() req) {
+  async getProductFollow(@Req() req): Promise<ProductFollowOutputDto> {
     return await this.productService.getProductFollow(req.user);
+  }
+
+  //이번주 인기 있는 상품 조회
+  @Get('popularity/select')
+  @ApiOperation({
+    summary: '인기 상품 조회 API(완료)',
+    description: '이번주 인기 상품 조회 입니다.',
+  })
+  @ApiOkResponse({
+    description: '인기 상품 조회 성공',
+    type: ProductPopularityOutputDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: '인기 상품 조회 실패',
+  })
+  async getProductPopularity(): Promise<ProductPopularityOutputDto> {
+    return await this.productService.getProductPopularity();
   }
 
   //상품 최신순 조회
@@ -120,12 +139,12 @@ export class ProductController {
     type: ProductWishSelectOutputDto,
   })
   @ApiResponse({
-    status: 400,
-    description: '상품 찜 조회 실패',
-  })
-  @ApiResponse({
     status: 401,
     description: '인증 오류',
+  })
+  @ApiResponse({
+    status: 404,
+    description: '상품 찜 조회 실패',
   })
   @ApiBearerAuth()
   @UseGuards(AuthGuard())
