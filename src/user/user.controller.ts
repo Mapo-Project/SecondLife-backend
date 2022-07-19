@@ -501,7 +501,7 @@ export class UserController {
   //회원 팔로잉 조회
   @Get('following/select')
   @ApiOperation({
-    summary: '회원 팔로잉 조회 API(완료)',
+    summary: '회원 팔로잉 조회 API(1차  완료)',
     description: '회원 팔로잉 조회 입니다. 토큰 값 필수!',
   })
   @ApiOkResponse({
@@ -523,7 +523,7 @@ export class UserController {
   }
 
   //회원 로그아웃
-  @Get('/logout')
+  @Post('/logout')
   @ApiOperation({
     summary: '회원 로그아웃 API(완료)',
     description: '회원 로그아웃 입니다. 토큰 값 필수!',

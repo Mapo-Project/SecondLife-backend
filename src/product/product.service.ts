@@ -21,36 +21,29 @@ import {
 @Injectable()
 export class ProductService {
   private logger = new Logger('ProductService');
-  async registrationProduct(
-    user_id: string,
-    file: string,
-    productRegistationInputDto: ProductRegistationInputDto,
-  ): Promise<ProductRegistationOutputDto> {
-    if (file) {
-      const { tile, content, price } = productRegistationInputDto;
-      const use_yn = 'Y';
-      const generatedFile = createImageURL(file);
-      const conn = getConnection();
 
-      const sql = `INSERT INTO product(USER_ID, TITLE, CONTENT, PRICE, USE_YN, INSERT_DT, PRODUCT_IMG) 
-                  VALUES(?,?,?,?,?,NOW(),?)`;
-      const params = [user_id, tile, content, price, use_yn, generatedFile];
-      try {
-        await conn.query(sql, params);
+  async getProductFollow(user_id: string) {
+    const conn = getConnection();
 
-        this.logger.verbose(`User ${user_id} 상품 등록 성공`);
-        return {
-          statusCode: 201,
-          message: '상품 등록 성공',
-        };
-      } catch (error) {
-        this.logger.error(`일반 회원가입 실패 Error: ${error}`);
-        throw new InternalServerErrorException();
-      }
+    const followProduct = await conn.query(
+      `SELECT PRODUCT.PRODUCT_ID AS product_id, SIZE AS size, PRICE AS price, PRODUCT_IMG AS product_img 
+       FROM FOLLOW LEFT JOIN PRODUCT ON FOLLOW.FOLLOWING_USER_ID = PRODUCT.USER_ID 
+       WHERE FOLLOW.USER_ID='${user_id}' AND FOLLOW.FOLLOW_YN='Y' ORDER BY PRODUCT.INSERT_DT DESC LIMIT 6`,
+    );
+
+    if (followProduct) {
+      this.logger.verbose(`User ${user_id} 팔로우 상품 최신순 조회 성공`);
+      return {
+        statusCode: 200,
+        message: '팔로우 상품 최신순 조회 성공',
+        data: followProduct,
+      };
     }
 
-    this.logger.verbose(`User ${user_id} 상품 등록 실패`);
-    throw new HttpException('상품 등록 실패', HttpStatus.BAD_REQUEST);
+    throw new HttpException(
+      '팔로우 상품 최신순 조회 실패',
+      HttpStatus.BAD_REQUEST,
+    );
   }
 
   async getProductLatest(): Promise<ProductLatestOutputDto> {
@@ -169,5 +162,44 @@ export class ProductService {
     }
 
     throw new HttpException('상품 찜 조회 실패', HttpStatus.BAD_REQUEST);
+  }
+
+  async registrationProduct(
+    user_id: string,
+    file: string,
+    productRegistationInputDto: ProductRegistationInputDto,
+  ): Promise<ProductRegistationOutputDto> {
+    if (file) {
+      const { tile, content, size, price } = productRegistationInputDto;
+      const generatedFile = createImageURL(file);
+      const conn = getConnection();
+
+      const sql = `INSERT INTO PRODUCT(USER_ID, TITLE, CONTENT, SIZE, PRICE, INSERT_DT, INSERT_ID, PRODUCT_IMG) 
+                  VALUES(?,?,?,?,?,NOW(),?,?)`;
+      const params = [
+        user_id,
+        tile,
+        content,
+        size,
+        price,
+        user_id,
+        generatedFile,
+      ];
+      try {
+        await conn.query(sql, params);
+
+        this.logger.verbose(`User ${user_id} 상품 등록 성공`);
+        return {
+          statusCode: 201,
+          message: '상품 등록 성공',
+        };
+      } catch (error) {
+        this.logger.error(`상품 등록 실패 Error: ${error}`);
+        throw new InternalServerErrorException();
+      }
+    }
+
+    this.logger.verbose(`User ${user_id} 상품 등록 실패`);
+    throw new HttpException('상품 등록 실패', HttpStatus.BAD_REQUEST);
   }
 }

@@ -5,7 +5,7 @@ import { IsNotEmpty } from 'class-validator';
 export class UserFollowInputDto {
   @ApiProperty({
     name: 'follow_user_id',
-    description: '팔로우 / 언팔로우 할 유제 아이디',
+    description: '팔로우 / 언팔로우 할 유저 아이디',
     example: 'secondLife',
   })
   @IsNotEmpty()

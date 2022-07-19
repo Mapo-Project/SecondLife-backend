@@ -674,7 +674,7 @@ export class UserService {
     const following = await conn.query(
       `SELECT FOLLOWING_USER_ID AS following_user_id, NAME AS name, PROFILE_IMG AS profile_img FROM FOLLOW INNER JOIN USER 
        ON FOLLOW.FOLLOWING_USER_ID = USER.USER_ID 
-       WHERE FOLLOW.USER_ID='${user_id}' AND FOLLOW.FOLLOW_YN='Y'`,
+       WHERE FOLLOW.USER_ID='${user_id}' AND FOLLOW.FOLLOW_YN='Y' ORDER BY name ASC`,
     );
 
     if (count && following) {

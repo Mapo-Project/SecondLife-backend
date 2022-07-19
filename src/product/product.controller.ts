@@ -33,58 +33,41 @@ import {
   ProductWishOutputDto,
   ProductWishSelectOutputDto,
 } from './dto/pruduct.wish.dto';
+import { ProductFollowOutputDto } from './dto/product.follow.dto';
 
 @ApiTags('상품 API')
 @Controller('product')
 export class ProductController {
   constructor(private productService: ProductService) {}
 
-  @Post('registration')
+  //팔로우 상품 조회
+  @Get('follow/select')
   @ApiOperation({
-    summary: '상품 등록 API(1차 완료)',
-    description: '상품 등록 API 입니다. 토크값 필수!',
+    summary: '팔로우 상품 최신순 조회 API(완료)',
+    description: '팔로우 한 유저 상품 최신순 조회 입니다. 토큰 값 필수!',
   })
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    description: '등록할 상품 정보',
-    type: ProductRegistationInputDto,
-  })
-  @ApiResponse({
-    status: 201,
-    description: '상품 등록 성공',
-    type: ProductRegistationOutputDto,
+  @ApiOkResponse({
+    description: '팔로우 상품 최신순 조회 성공',
+    type: ProductFollowOutputDto,
   })
   @ApiResponse({
     status: 400,
-    description: 'Error: Bad Request',
+    description: '팔로우 상품 최신순 조회 실패',
   })
   @ApiResponse({
     status: 401,
     description: '인증 오류',
   })
-  @ApiResponse({
-    status: 413,
-    description: '파일크기 제한',
-  })
   @ApiBearerAuth()
   @UseGuards(AuthGuard())
-  @UseInterceptors(FileInterceptor('product', multerOptions))
-  async registrationProduct(
-    @Req() req,
-    @UploadedFile() file: string,
-    @Body(ValidationPipe)
-    productRegistationInputDto: ProductRegistationInputDto,
-  ): Promise<ProductRegistationOutputDto> {
-    return await this.productService.registrationProduct(
-      req.user,
-      file,
-      productRegistationInputDto,
-    );
+  async getProductFollow(@Req() req) {
+    return await this.productService.getProductFollow(req.user);
   }
 
-  @Get('select/latest')
+  //상품 최신순 조회
+  @Get('latest/select')
   @ApiOperation({
-    summary: '상품 최신순 조회(1차 완료)',
+    summary: '상품 최신순 조회 API(1차 완료)',
     description: '상품을 최신순으로 최대 14개까지 조회합니다.',
   })
   @ApiOkResponse({
@@ -148,5 +131,49 @@ export class ProductController {
   @UseGuards(AuthGuard())
   async getProductWish(@Req() req): Promise<ProductWishSelectOutputDto> {
     return await this.productService.getProductWish(req.user);
+  }
+
+  //상품 등록
+  @Post('registration')
+  @ApiOperation({
+    summary: '상품 등록 API(1차 완료)',
+    description: '상품 등록 API 입니다. 토크값 필수!',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    description: '등록할 상품 정보',
+    type: ProductRegistationInputDto,
+  })
+  @ApiResponse({
+    status: 201,
+    description: '상품 등록 성공',
+    type: ProductRegistationOutputDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Error: Bad Request',
+  })
+  @ApiResponse({
+    status: 401,
+    description: '인증 오류',
+  })
+  @ApiResponse({
+    status: 413,
+    description: '파일크기 제한',
+  })
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard())
+  @UseInterceptors(FileInterceptor('product', multerOptions))
+  async registrationProduct(
+    @Req() req,
+    @UploadedFile() file: string,
+    @Body(ValidationPipe)
+    productRegistationInputDto: ProductRegistationInputDto,
+  ): Promise<ProductRegistationOutputDto> {
+    return await this.productService.registrationProduct(
+      req.user,
+      file,
+      productRegistationInputDto,
+    );
   }
 }
