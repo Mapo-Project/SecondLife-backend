@@ -70,7 +70,10 @@ export class AuthController {
     type: UserSocialLoginOutputDto,
   })
   @UseGuards(AuthGuard('kakao'))
-  async kakaoCallBack(@Req() req, @Res() res) {
+  async kakaoCallBack(
+    @Req() req,
+    @Res() res,
+  ): Promise<UserSocialLoginOutputDto> {
     const user = await this.authService.loginCallBack(req.user as UserDto);
     this.logger.verbose(`User ${req.user.social_id} 카카오 로그인 성공
     Payload: ${JSON.stringify(user)}`);

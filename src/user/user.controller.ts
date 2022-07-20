@@ -98,6 +98,10 @@ export class UserController {
     type: UserAuthPhoneOutputDto,
   })
   @ApiResponse({
+    status: 400,
+    description: 'Error: Bad Request',
+  })
+  @ApiResponse({
     status: 409,
     description: '등록된 휴대폰 번호가 존재합니다.',
   })
@@ -122,8 +126,16 @@ export class UserController {
     type: UserAuthPhoneOutputDto,
   })
   @ApiResponse({
+    status: 400,
+    description: 'Error: Bad Request',
+  })
+  @ApiResponse({
     status: 401,
     description: '인증 오류',
+  })
+  @ApiResponse({
+    status: 409,
+    description: '등록된 휴대폰 번호가 존재합니다.',
   })
   @UseGuards(AuthGuard())
   @ApiBearerAuth()
@@ -533,6 +545,10 @@ export class UserController {
     type: UserLogoutOutputDto,
   })
   @ApiResponse({
+    status: 400,
+    description: '회원 로그아웃 실패',
+  })
+  @ApiResponse({
     status: 401,
     description: '인증 오류',
   })
@@ -551,6 +567,10 @@ export class UserController {
   @ApiOkResponse({
     description: '회원 탈퇴 성공',
     type: UserWithdrawalOutputDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: '회원 탈퇴 실패',
   })
   @ApiResponse({
     status: 401,

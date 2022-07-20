@@ -102,14 +102,13 @@ export class UserService {
   }
 
   private sendSMS(phone_number: number) {
-    const number: number =
-      Math.floor(Math.random() * (999999 - 111111 + 1)) + 111111;
+    let number = Math.floor(Math.random() * (999999 - 111111 + 1)) + 111111;
     const body = {
       type: 'SMS',
       contentType: 'COMM',
       countryCode: '82',
       from: process.env.HOST_PHONE_NUMBER, // 발신자 번호
-      content: `인증번호는 [${number}] 입니다.`,
+      content: `[세컨드 라이프]\n인증번호는 [${number}] 입니다.`,
       messages: [
         {
           to: phone_number, // 수신자 번호
@@ -124,10 +123,11 @@ export class UserService {
         'x-ncp-apigw-signature-v2': this.makeSignature(),
       },
     };
+
     axios.post(process.env.NCP_URL, body, options).catch((err) => {
-      this.logger.error(`문자 전송 실패
-      Error: ${err}`);
-      return new InternalServerErrorException();
+      this.logger.error(`문자 전송 실패 Error: ${err}`);
+      number = 0;
+      return number;
     });
 
     return number;
@@ -146,12 +146,20 @@ export class UserService {
     if (!found) {
       const number = this.sendSMS(phone_number);
 
-      this.logger.verbose(`휴대폰 인증 번호 생성 성공`);
-      return {
-        statusCode: 200,
-        message: '휴대폰 인증 번호 생성 성공',
-        code: number,
-      };
+      if (number !== 0) {
+        this.logger.verbose(`휴대폰 인증 번호 생성 성공`);
+        return {
+          statusCode: 200,
+          message: '휴대폰 인증 번호 생성 성공',
+          code: number,
+        };
+      }
+
+      this.logger.verbose(`휴대폰 인증 번호 생성 실패`);
+      throw new HttpException(
+        '휴대폰 인증 번호 생성 실패',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     this.logger.verbose(`일반 회원가입 휴대폰 인증 실패`);
@@ -176,12 +184,20 @@ export class UserService {
     if (!found) {
       const number = this.sendSMS(phone_number);
 
-      this.logger.verbose(`휴대폰 인증 번호 생성 성공`);
-      return {
-        statusCode: 200,
-        message: '휴대폰 인증 번호 생성 성공',
-        code: number,
-      };
+      if (number !== 0) {
+        this.logger.verbose(`휴대폰 인증 번호 생성 성공`);
+        return {
+          statusCode: 200,
+          message: '휴대폰 인증 번호 생성 성공',
+          code: number,
+        };
+      }
+
+      this.logger.verbose(`휴대폰 인증 번호 생성 실패`);
+      throw new HttpException(
+        '휴대폰 인증 번호 생성 실패',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     this.logger.verbose(`소셜 회원가입 휴대폰 인증 실패`);
@@ -692,30 +708,42 @@ export class UserService {
 
   async userLogout(user_id: string): Promise<UserLogoutOutputDto> {
     const conn = getConnection();
-    await conn.query(
-      `UPDATE USER SET REFRESH_TOKEN=NULL, UPDATE_DT=NOW(), UPDATE_ID='${user_id}' 
-       WHERE USER_ID='${user_id}' AND status='P'`,
-    );
 
-    this.logger.verbose(`User ${user_id} 회원 로그아웃 성공`);
-    return {
-      statusCode: 200,
-      message: '회원 로그아웃 성공',
-    };
+    try {
+      await conn.query(
+        `UPDATE USER SET REFRESH_TOKEN=NULL, UPDATE_DT=NOW(), UPDATE_ID='${user_id}' 
+         WHERE USER_ID='${user_id}' AND status='P'`,
+      );
+
+      this.logger.verbose(`User ${user_id} 회원 로그아웃 성공`);
+      return {
+        statusCode: 200,
+        message: '회원 로그아웃 성공',
+      };
+    } catch (error) {
+      this.logger.verbose(`User ${user_id} 회원 로그아웃 실패`);
+      throw new HttpException('회원 로그아웃 실패', HttpStatus.BAD_REQUEST);
+    }
   }
 
   async userWithdrawal(user_id: string): Promise<UserWithdrawalOutputDto> {
     const conn = getConnection();
-    await conn.query(
-      `UPDATE USER SET STATUS='D', NAME=NULL, PHONE_NUM=NULL, EMAIL=NULL, 
-       UPDATE_DT=NOW(), UPDATE_ID='${user_id}', PROFILE_IMG=NULL, REFRESH_TOKEN=NULL 
-       WHERE USER_ID='${user_id}' AND STATUS='P'`,
-    );
 
-    this.logger.verbose(`User ${user_id} 회원 탈퇴 성공`);
-    return {
-      statusCode: 200,
-      message: '회원 탈퇴 성공',
-    };
+    try {
+      await conn.query(
+        `UPDATE USER SET STATUS='D', NAME=NULL, PHONE_NUM=NULL, EMAIL=NULL, 
+         UPDATE_DT=NOW(), UPDATE_ID='${user_id}', PROFILE_IMG=NULL, REFRESH_TOKEN=NULL 
+         WHERE USER_ID='${user_id}' AND STATUS='P'`,
+      );
+
+      this.logger.verbose(`User ${user_id} 회원 탈퇴 성공`);
+      return {
+        statusCode: 200,
+        message: '회원 탈퇴 성공',
+      };
+    } catch (error) {
+      this.logger.verbose(`User ${user_id} 회원 탈퇴 실패`);
+      throw new HttpException('회원 탈퇴 실패', HttpStatus.BAD_REQUEST);
+    }
   }
 }

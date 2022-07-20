@@ -86,13 +86,13 @@ export class AuthService {
       `SELECT VERIFY FROM USER WHERE USER_ID='${user_id}' AND STATUS='P'`,
     );
 
-    return Object.assign({
+    return {
       statusCode: 200,
       message: '로그인 성공',
       verify: user_verify.VERIFY,
       accessToken: accessToken,
       refreshToken: refreshToken,
-    });
+    };
   }
 
   async accessTokenReissuance(
