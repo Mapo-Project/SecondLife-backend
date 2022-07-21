@@ -65,15 +65,6 @@ export class UserSignupInputDto {
   @ApiProperty({ example: 'Y', description: '휴대폰 인증 여부' })
   @IsNotEmpty()
   phone_verify: string;
-
-  @ApiProperty({
-    type: 'string',
-    format: 'binary',
-    name: 'profile',
-    required: false,
-    description: '프로필 이미지',
-  })
-  profile_img: string;
 }
 
 //일반 회원가입 Output 데이터

@@ -101,7 +101,7 @@ export class UserService {
     return signature.toString();
   }
 
-  private sendSMS(phone_number: number) {
+  private async sendSMS(phone_number: number) {
     let number = Math.floor(Math.random() * (999999 - 111111 + 1)) + 111111;
     const body = {
       type: 'SMS',
@@ -124,7 +124,7 @@ export class UserService {
       },
     };
 
-    axios.post(process.env.NCP_URL, body, options).catch((err) => {
+    await axios.post(process.env.NCP_URL, body, options).catch((err) => {
       this.logger.error(`문자 전송 실패 Error: ${err}`);
       number = 0;
       return number;
@@ -144,7 +144,7 @@ export class UserService {
     );
 
     if (!found) {
-      const number = this.sendSMS(phone_number);
+      const number = await this.sendSMS(phone_number);
 
       if (number !== 0) {
         this.logger.verbose(`휴대폰 인증 번호 생성 성공`);
@@ -182,7 +182,7 @@ export class UserService {
     );
 
     if (!found) {
-      const number = this.sendSMS(phone_number);
+      const number = await this.sendSMS(phone_number);
 
       if (number !== 0) {
         this.logger.verbose(`휴대폰 인증 번호 생성 성공`);
@@ -351,7 +351,6 @@ export class UserService {
 
   async generalSignUp(
     userSignupInputDto: UserSignupInputDto,
-    file: string,
   ): Promise<UserSignupOutputDto> {
     const {
       user_id,
@@ -377,16 +376,11 @@ export class UserService {
       );
     }
 
-    if (!file) {
-      file = process.env.PROFILE_IMG_DEFAULT;
-    } else {
-      file = createImageURL(file);
-    }
-
     const method = 'general';
     const verify = 'Y';
     const status = 'P';
     const role_id = 2;
+    const profile_img = process.env.PROFILE_IMG_DEFAULT;
 
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(password, salt);
@@ -408,7 +402,7 @@ export class UserService {
       verify,
       status,
       user_id,
-      file,
+      profile_img,
     ];
     try {
       if (phone_verify === 'Y') {

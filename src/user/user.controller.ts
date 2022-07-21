@@ -273,7 +273,6 @@ export class UserController {
     summary: '일반 회원가입 API(완료)',
     description: '일반 회원가입 입니다.',
   })
-  @ApiConsumes('multipart/form-data')
   @ApiBody({
     description: '유저 정보',
     type: UserSignupInputDto,
@@ -295,17 +294,11 @@ export class UserController {
     status: 409,
     description: '중복된 entry가 존재합니다.',
   })
-  @ApiResponse({
-    status: 413,
-    description: '파일크기 제한',
-  })
-  @UseInterceptors(FileInterceptor('profile', multerOptions))
   async generalSignUp(
     @Body(ValidationPipe)
     userSignupInputDto: UserSignupInputDto,
-    @UploadedFile() file: string,
   ): Promise<UserSignupOutputDto> {
-    return await this.userService.generalSignUp(userSignupInputDto, file);
+    return await this.userService.generalSignUp(userSignupInputDto);
   }
 
   //일반 회원 로그인
