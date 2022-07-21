@@ -703,6 +703,10 @@ export class UserService {
     throw new HttpException('회원 팔로잉 조회 실패', HttpStatus.BAD_REQUEST);
   }
 
+  async getUserTopSeller() {
+    const conn = getConnection();
+  }
+
   async userLogout(user_id: string): Promise<UserLogoutOutputDto> {
     const conn = getConnection();
 

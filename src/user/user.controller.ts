@@ -55,6 +55,7 @@ import {
   ProfileDetailOutputDto,
   SelectProfileOutputDto,
 } from './dto/user.profile.dto';
+import { UserTopSellerOutputDto } from './dto/user.seller.dto';
 import { UserSignupInputDto, UserSignupOutputDto } from './dto/user.signup.dto';
 import { UserWithdrawalOutputDto } from './dto/user.withdrawal.dto';
 import { multerOptions } from './multerOptions';
@@ -506,7 +507,7 @@ export class UserController {
   //회원 팔로잉 조회
   @Get('following/select')
   @ApiOperation({
-    summary: '회원 팔로잉 조회 API(1차  완료)',
+    summary: '회원 팔로잉 조회 API(완료)',
     description: '회원 팔로잉 조회 입니다. 토큰 값 필수!',
   })
   @ApiOkResponse({
@@ -525,6 +526,28 @@ export class UserController {
   @UseGuards(AuthGuard())
   async getUserFollowing(@Req() req): Promise<UserFollowwingOutputDto> {
     return await this.userService.getUserFollowing(req.user);
+  }
+
+  //이달의 탑 셀러 조회
+  @Get('seller/top/select')
+  @ApiOperation({
+    summary: '이달의 탑 셀러 조회 API(1차 완료)',
+    description: '이달의 탑 셀러 조회 입니다. 토큰 값 필수!',
+  })
+  @ApiOkResponse({
+    description: '이달의 탑 셀러 조회 성공',
+    type: UserTopSellerOutputDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: '이달의 탑 셀러 조회 실패',
+  })
+  @ApiResponse({
+    status: 401,
+    description: '인증 오류',
+  })
+  async getUserTopSeller() {
+    return await this.userService.getUserTopSeller();
   }
 
   //회원 로그아웃
