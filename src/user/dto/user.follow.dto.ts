@@ -43,6 +43,9 @@ export class UserFollowwingDto {
 
   @ApiProperty({ example: 'img', description: '프로필 이미지' })
   profile_img: string;
+
+  @ApiProperty({ example: '0', description: '상품 카운트' })
+  product_count: string;
 }
 
 //회원 팔로잉 Output 데이터
@@ -63,7 +66,7 @@ export class UserFollowwingOutputDto {
     example: 1,
     description: '팔로잉 수',
   })
-  count: number;
+  user_count: number;
 
   @ApiProperty({ type: [UserFollowwingDto] })
   data: UserFollowwingDto;

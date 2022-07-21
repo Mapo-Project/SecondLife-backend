@@ -682,9 +682,12 @@ export class UserService {
       `SELECT COUNT(ID) AS count FROM FOLLOW WHERE USER_ID='${user_id}' AND FOLLOW_YN='Y'`,
     );
     const following = await conn.query(
-      `SELECT FOLLOWING_USER_ID AS following_user_id, NAME AS name, PROFILE_IMG AS profile_img FROM FOLLOW INNER JOIN USER 
-       ON FOLLOW.FOLLOWING_USER_ID = USER.USER_ID 
-       WHERE FOLLOW.USER_ID='${user_id}' AND FOLLOW.FOLLOW_YN='Y' ORDER BY name ASC`,
+      `SELECT FOLLOWING_USER_ID AS following_user_id, NAME AS name, PROFILE_IMG AS profile_img, 
+       COUNT(PRODUCT.USER_ID) AS product_count FROM FOLLOW INNER JOIN USER ON FOLLOW.FOLLOWING_USER_ID = USER.USER_ID 
+       LEFT JOIN PRODUCT ON FOLLOW.FOLLOWING_USER_ID = PRODUCT.USER_ID AND DATE(PRODUCT.INSERT_DT) 
+       BETWEEN DATE_ADD(CURDATE(), INTERVAL -1 DAY) AND CURRENT_DATE() AND USE_YN='Y'
+       WHERE FOLLOW.USER_ID='${user_id}' AND FOLLOW.FOLLOW_YN='Y' GROUP BY following_user_id 
+       ORDER BY name ASC`,
     );
 
     if (count && following) {
@@ -692,7 +695,7 @@ export class UserService {
       return {
         statusCode: 200,
         message: '회원 팔로잉 조회 성공',
-        count: parseInt(count.count),
+        user_count: parseInt(count.count),
         data: following,
       };
     }
