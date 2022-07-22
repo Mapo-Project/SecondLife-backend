@@ -532,7 +532,7 @@ export class UserController {
   @Get('seller/top/select')
   @ApiOperation({
     summary: '이달의 탑 셀러 조회 API(1차 완료)',
-    description: '이달의 탑 셀러 조회 입니다. 토큰 값 필수!',
+    description: '이달의 탑 셀러 조회 입니다.',
   })
   @ApiOkResponse({
     description: '이달의 탑 셀러 조회 성공',
@@ -546,7 +546,7 @@ export class UserController {
     status: 401,
     description: '인증 오류',
   })
-  async getUserTopSeller() {
+  async getUserTopSeller(): Promise<UserTopSellerOutputDto> {
     return await this.userService.getUserTopSeller();
   }
 

@@ -5,14 +5,14 @@ export class UserTopSellerDto {
   @ApiProperty({ example: 'secondLife', description: '아이디' })
   user_id: string;
 
+  @ApiProperty({ example: '1', description: '순위' })
+  ranking: string;
+
   @ApiProperty({ example: '셀러', description: '이름' })
   name: string;
 
-  @ApiProperty({ example: '1', description: '순위' })
-  rank: string;
-
-  @ApiProperty({ example: '4.5', description: '별점' })
-  star_count: string;
+  @ApiProperty({ example: 4.5, description: '별점' })
+  star_count: number;
 
   @ApiProperty({ example: '1', description: '팔로워 수' })
   follower_count: string;

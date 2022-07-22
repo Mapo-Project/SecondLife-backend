@@ -48,6 +48,7 @@ import {
   UserFollowOutputDto,
   UserFollowwingOutputDto,
 } from './dto/user.follow.dto';
+import { UserTopSellerOutputDto } from './dto/user.seller.dto';
 
 @Injectable()
 export class UserService {
@@ -703,8 +704,32 @@ export class UserService {
     throw new HttpException('회원 팔로잉 조회 실패', HttpStatus.BAD_REQUEST);
   }
 
-  async getUserTopSeller() {
+  async getUserTopSeller(): Promise<UserTopSellerOutputDto> {
     const conn = getConnection();
+
+    try {
+      const found = await conn.query(`
+      SELECT user_id, RANK() OVER (ORDER BY sold_count DESC) AS ranking, name, star_count, follower_count, sold_count, profile_img 
+      FROM(SELECT USER.USER_ID AS user_id, 
+      (SELECT AVG(STAR_COUNT) FROM REVIEW WHERE PRODUCT.USER_ID=REVIEW.PRODUCT_USER_ID AND REVIEW.USE_YN='Y') AS star_count,
+      (SELECT COUNT(*) FROM FOLLOW WHERE PRODUCT.USER_ID=FOLLOW.FOLLOWING_USER_ID AND FOLLOW.FOLLOW_YN='Y') AS follower_count, 
+      COUNT(*) AS sold_count, USER.NAME AS name, USER.PROFILE_IMG AS profile_img  
+      FROM PRODUCT INNER JOIN USER ON PRODUCT.USER_ID = USER.USER_ID AND PRODUCT.USE_YN='Y' AND USER.STATUS='P' AND PRODUCT.SALE_ST='3' 
+      WHERE DATE(PRODUCT.INSERT_DT) BETWEEN LAST_DAY(NOW() - interval 1 MONTH) + interval 1 DAY AND LAST_DAY(NOW()) GROUP BY user_id)AS counts`);
+
+      this.logger.verbose(`이달의 탑 셀러 조회 성공`);
+      return {
+        statusCode: 200,
+        message: '이달의 탑 셀러 조회 성공',
+        data: found,
+      };
+    } catch (error) {
+      this.logger.verbose(`이달의 탑 셀러 조회 실패`);
+      throw new HttpException(
+        '이달의 탑 셀러 조회 실패',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
   }
 
   async userLogout(user_id: string): Promise<UserLogoutOutputDto> {
