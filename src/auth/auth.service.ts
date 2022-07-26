@@ -2,7 +2,10 @@ import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserSocialLoginOutputDto } from 'src/user/dto/user.login.dto';
 import { getConnection } from 'typeorm';
-import { AccessTokenReissuanceOutputDto } from './dto/acess.token.dto';
+import {
+  AccessTokenReissuanceInputDto,
+  AccessTokenReissuanceOutputDto,
+} from './dto/acess.token.dto';
 import { UserDto } from './dto/user.dto';
 import uuidRandom from './uuidRandom';
 
@@ -39,8 +42,8 @@ export class AuthService {
         expiresIn: `${process.env.REFRESH_JWT_SECRET_TIME}m`,
       });
 
-      const sql =
-        'INSERT INTO USER(USER_ID, ROLE_ID, SOCIAL_ID, METHOD, EMAIL, VERIFY, STATUS, INSERT_DT, INSERT_ID, PROFILE_IMG, REFRESH_TOKEN) VALUES(?,?,?,?,?,?,?,NOW(),?,?,?)';
+      const sql = `INSERT INTO USER(USER_ID, ROLE_ID, SOCIAL_ID, METHOD, EMAIL, VERIFY, STATUS, INSERT_DT, INSERT_ID, PROFILE_IMG, REFRESH_TOKEN) 
+                   VALUES(?,?,?,?,?,?,?,NOW(),?,?,?)`;
       const params = [
         user_id,
         role_id,
@@ -96,9 +99,11 @@ export class AuthService {
   }
 
   async accessTokenReissuance(
-    refreshToken: string,
+    accessTokenReissuanceInputDto: AccessTokenReissuanceInputDto,
   ): Promise<AccessTokenReissuanceOutputDto> {
+    const { refreshToken } = accessTokenReissuanceInputDto;
     const conn = getConnection();
+
     const [found] = await conn.query(
       `SELECT USER_ID FROM USER WHERE REFRESH_TOKEN='${refreshToken}' AND STATUS='P'`,
     );

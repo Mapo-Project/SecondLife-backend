@@ -384,6 +384,10 @@ export class UserController {
     status: 401,
     description: '인증 오류',
   })
+  @ApiResponse({
+    status: 404,
+    description: '회원 프로필 추가정보가 등록되지 않은 회원 입니다.',
+  })
   @ApiBearerAuth()
   @UseGuards(AuthGuard())
   async getUserProfile(@Req() req): Promise<SelectProfileOutputDto> {

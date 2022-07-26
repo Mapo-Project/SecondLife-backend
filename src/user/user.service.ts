@@ -529,17 +529,26 @@ export class UserService {
     const conn = getConnection();
     const [user] = await conn.query(
       `SELECT NAME AS name, BIRTH AS birth, EMAIL AS email, PHONE_NUM AS phone_num, ADDRESS AS address, 
-       DETAIL_ADDRESS AS detail_address, METHOD AS method, PROFILE_IMG AS profile_img FROM USER 
-       WHERE USER_ID='${user_id}' AND VERIFY='Y' AND STATUS='P'`,
+       DETAIL_ADDRESS AS detail_address, METHOD AS method, PROFILE_IMG AS profile_img, VERIFY AS verify FROM USER 
+       WHERE USER_ID='${user_id}' AND STATUS='P'`,
     );
 
     if (user) {
-      this.logger.verbose(`User ${user_id} 회원 프로필 조회 성공`);
-      return {
-        statusCode: 200,
-        message: '회원 프로필 조회 성공',
-        data: user,
-      };
+      if (user.verify === 'Y') {
+        delete user.verify;
+
+        this.logger.verbose(`User ${user_id} 회원 프로필 조회 성공`);
+        return {
+          statusCode: 200,
+          message: '회원 프로필 조회 성공',
+          data: user,
+        };
+      }
+      this.logger.verbose(`User ${user_id} 회원 프로필 조회 실패`);
+      throw new HttpException(
+        '회원 프로필 추가정보가 등록되지 않은 회원 입니다.',
+        HttpStatus.NOT_FOUND,
+      );
     } else {
       this.logger.verbose(`User ${user_id} 회원 프로필 조회 실패`);
       throw new HttpException('회원 프로필 조회 실패', HttpStatus.BAD_REQUEST);
