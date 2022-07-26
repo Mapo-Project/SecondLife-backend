@@ -701,6 +701,7 @@ export class UserService {
       };
     }
 
+    this.logger.verbose(`User ${user_id} 팔로잉 조회 실패`);
     throw new HttpException('회원 팔로잉 조회 실패', HttpStatus.BAD_REQUEST);
   }
 
@@ -709,12 +710,12 @@ export class UserService {
 
     try {
       const found = await conn.query(`
-      SELECT user_id, RANK() OVER (ORDER BY sold_count DESC) AS ranking, name, star_count, follower_count, sold_count, profile_img 
-      FROM(SELECT USER.USER_ID AS user_id, 
+      SELECT user_id, RANK() OVER (ORDER BY sold_count DESC, star_count DESC) AS ranking, name, CAST(star_count AS CHAR) AS start_count, follower_count, 
+      sold_count, profile_img FROM(SELECT USER.USER_ID AS user_id, 
       (SELECT AVG(STAR_COUNT) FROM REVIEW WHERE PRODUCT.USER_ID=REVIEW.PRODUCT_USER_ID AND REVIEW.USE_YN='Y') AS star_count,
-      (SELECT COUNT(*) FROM FOLLOW WHERE PRODUCT.USER_ID=FOLLOW.FOLLOWING_USER_ID AND FOLLOW.FOLLOW_YN='Y') AS follower_count, 
+      (SELECT COUNT(ID) FROM FOLLOW WHERE PRODUCT.USER_ID=FOLLOW.FOLLOWING_USER_ID AND FOLLOW.FOLLOW_YN='Y') AS follower_count, 
       COUNT(*) AS sold_count, USER.NAME AS name, USER.PROFILE_IMG AS profile_img  
-      FROM PRODUCT INNER JOIN USER ON PRODUCT.USER_ID = USER.USER_ID AND PRODUCT.USE_YN='Y' AND USER.STATUS='P' AND PRODUCT.SALE_ST='3' 
+      FROM PRODUCT INNER JOIN USER ON PRODUCT.USER_ID = USER.USER_ID AND PRODUCT.USE_YN='Y' AND USER.STATUS='P' AND PRODUCT.PRODUCT_ST='05' 
       WHERE DATE(PRODUCT.INSERT_DT) BETWEEN LAST_DAY(NOW() - interval 1 MONTH) + interval 1 DAY AND LAST_DAY(NOW()) GROUP BY user_id)AS counts`);
 
       this.logger.verbose(`이달의 탑 셀러 조회 성공`);
@@ -724,11 +725,55 @@ export class UserService {
         data: found,
       };
     } catch (error) {
-      this.logger.verbose(`이달의 탑 셀러 조회 실패`);
+      this.logger.verbose(`이달의 탑 셀러 조회 실패\n ${error}`);
       throw new HttpException(
         '이달의 탑 셀러 조회 실패',
         HttpStatus.BAD_REQUEST,
       );
+    }
+  }
+
+  async getUserTopSellerAuth(user_id: string) {
+    const topSellerData: any = await this.getUserTopSeller();
+
+    if (topSellerData.statusCode === 200) {
+      const length = topSellerData.data.length;
+
+      for (let i = 0; i < length; i++) {
+        const follow_user_id = topSellerData.data[i].user_id;
+        const existFollow = await this.followConfirmation(
+          user_id,
+          follow_user_id,
+        );
+        topSellerData.data[i].follow = existFollow;
+      }
+      this.logger.verbose(`이달의 탑 셀러 조회 성공`);
+      return topSellerData;
+    }
+    this.logger.verbose(`이달의 탑 셀러 조회 실패\n`);
+    throw new HttpException('이달의 탑 셀러 조회 실패', HttpStatus.BAD_REQUEST);
+  }
+
+  private async followConfirmation(user_id: string, follow_user_id: string) {
+    const conn = getConnection();
+
+    if (user_id === follow_user_id) {
+      return 'me';
+    }
+    try {
+      const [found] = await conn.query(
+        `SELECT USER_ID AS user_id FROM FOLLOW 
+         WHERE USER_ID='${user_id}' AND FOLLOWING_USER_ID='${follow_user_id}'
+         AND FOLLOW_YN='Y'`,
+      );
+      if (!found) {
+        return 'notFollow';
+      }
+
+      return 'following';
+    } catch (error) {
+      this.logger.verbose(`팔로우 여부 조회 실패\n ${error}`);
+      throw new HttpException('팔로우 여부 조회 실패', HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -747,7 +792,7 @@ export class UserService {
         message: '회원 로그아웃 성공',
       };
     } catch (error) {
-      this.logger.verbose(`User ${user_id} 회원 로그아웃 실패`);
+      this.logger.verbose(`User ${user_id} 회원 로그아웃 실패\n ${error}`);
       throw new HttpException('회원 로그아웃 실패', HttpStatus.BAD_REQUEST);
     }
   }
@@ -768,7 +813,7 @@ export class UserService {
         message: '회원 탈퇴 성공',
       };
     } catch (error) {
-      this.logger.verbose(`User ${user_id} 회원 탈퇴 실패`);
+      this.logger.verbose(`User ${user_id} 회원 탈퇴 실패\n ${error}`);
       throw new HttpException('회원 탈퇴 실패', HttpStatus.BAD_REQUEST);
     }
   }

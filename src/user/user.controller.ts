@@ -55,7 +55,10 @@ import {
   ProfileDetailOutputDto,
   SelectProfileOutputDto,
 } from './dto/user.profile.dto';
-import { UserTopSellerOutputDto } from './dto/user.seller.dto';
+import {
+  UserTopSellerAuthOutputDto,
+  UserTopSellerOutputDto,
+} from './dto/user.seller.dto';
 import { UserSignupInputDto, UserSignupOutputDto } from './dto/user.signup.dto';
 import { UserWithdrawalOutputDto } from './dto/user.withdrawal.dto';
 import { multerOptions } from './multerOptions';
@@ -528,10 +531,10 @@ export class UserController {
     return await this.userService.getUserFollowing(req.user);
   }
 
-  //이달의 탑 셀러 조회
+  //이달의 탑 셀러 조회(로그인x)
   @Get('seller/top/select')
   @ApiOperation({
-    summary: '이달의 탑 셀러 조회 API(1차 완료)',
+    summary: '이달의 탑 셀러 조회(로그인x) API(완료)',
     description: '이달의 탑 셀러 조회 입니다.',
   })
   @ApiOkResponse({
@@ -542,12 +545,32 @@ export class UserController {
     status: 400,
     description: '이달의 탑 셀러 조회 실패',
   })
+  async getUserTopSeller(): Promise<UserTopSellerOutputDto> {
+    return await this.userService.getUserTopSeller();
+  }
+
+  //이달의 탑 셀러 조회(로그인o)
+  @Get('seller/top/select/auth')
+  @ApiOperation({
+    summary: '이달의 탑 셀러 조회(로그인o) API(완료)',
+    description: '이달의 탑 셀러 조회 입니다.',
+  })
+  @ApiOkResponse({
+    description: '이달의 탑 셀러 조회 성공',
+    type: UserTopSellerAuthOutputDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: '이달의 탑 셀러 조회 실패',
+  })
   @ApiResponse({
     status: 401,
     description: '인증 오류',
   })
-  async getUserTopSeller(): Promise<UserTopSellerOutputDto> {
-    return await this.userService.getUserTopSeller();
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard())
+  async getUserTopSellerAuth(@Req() req) {
+    return await this.userService.getUserTopSellerAuth(req.user);
   }
 
   //회원 로그아웃
