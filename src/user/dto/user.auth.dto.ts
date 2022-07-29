@@ -1,5 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsNumberString,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 
 //유저 인증 Input 데이터
 export class UserAuthPhoneInputDto {
@@ -9,6 +14,9 @@ export class UserAuthPhoneInputDto {
     example: '01033337777',
   })
   @IsNotEmpty()
+  @IsNumberString()
+  @MinLength(11)
+  @MaxLength(11)
   phone_number: number;
 }
 

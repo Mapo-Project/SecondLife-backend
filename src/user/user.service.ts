@@ -36,7 +36,6 @@ import * as bcrypt from 'bcryptjs';
 import { UserSignupInputDto, UserSignupOutputDto } from './dto/user.signup.dto';
 import { UserLoginInputDto, UserLoginOutputDto } from './dto/user.login.dto';
 import { JwtService } from '@nestjs/jwt';
-import * as pbkdf2 from 'pbkdf2-sha256';
 import {
   UserFindIdInputDto,
   UserFindIdOutputDto,
@@ -48,6 +47,7 @@ import {
   UserFollowOutputDto,
   UserFollowwingOutputDto,
 } from './dto/user.follow.dto';
+import { UserTopSellerOutputDto } from './dto/user.seller.dto';
 
 @Injectable()
 export class UserService {
@@ -70,12 +70,12 @@ export class UserService {
       ? {
           statusCode: 200,
           message: '아이디 중복체크 조회 성공',
-          duplicate: 'true',
+          duplicate: 'duplicate',
         }
       : {
           statusCode: 200,
           message: '아이디 중복체크 조회 성공',
-          duplicate: 'false',
+          duplicate: 'unDuplicate',
         };
   }
 
@@ -101,15 +101,14 @@ export class UserService {
     return signature.toString();
   }
 
-  private sendSMS(phone_number: number) {
-    const number: number =
-      Math.floor(Math.random() * (999999 - 111111 + 1)) + 111111;
+  private async sendSMS(phone_number: number) {
+    let number = Math.floor(Math.random() * (999999 - 111111 + 1)) + 111111;
     const body = {
       type: 'SMS',
       contentType: 'COMM',
       countryCode: '82',
       from: process.env.HOST_PHONE_NUMBER, // 발신자 번호
-      content: `인증번호는 [${number}] 입니다.`,
+      content: `[세컨드 라이프]\n인증번호는 [${number}] 입니다.`,
       messages: [
         {
           to: phone_number, // 수신자 번호
@@ -124,16 +123,17 @@ export class UserService {
         'x-ncp-apigw-signature-v2': this.makeSignature(),
       },
     };
-    axios.post(process.env.NCP_URL, body, options).catch((err) => {
-      this.logger.error(`문자 전송 실패
-      Error: ${err}`);
-      return new InternalServerErrorException();
+
+    await axios.post(process.env.NCP_URL, body, options).catch((err) => {
+      this.logger.error(`문자 전송 실패 Error: ${err}`);
+      number = 0;
+      return number;
     });
 
     return number;
   }
 
-  async userSignupAuthPhone(
+  async userGeneralSignupAuthPhone(
     userAuthPhoneInputDto: UserAuthPhoneInputDto,
   ): Promise<UserAuthPhoneOutputDto> {
     const { phone_number } = userAuthPhoneInputDto;
@@ -144,24 +144,70 @@ export class UserService {
     );
 
     if (!found) {
-      const number = this.sendSMS(phone_number);
+      const number = await this.sendSMS(phone_number);
 
-      this.logger.verbose(`휴대폰 인증 번호 생성 성공`);
-      return {
-        statusCode: 200,
-        message: '휴대폰 인증 번호 생성 성공',
-        code: number,
-      };
+      if (number !== 0) {
+        this.logger.verbose(`휴대폰 인증 번호 생성 성공`);
+        return {
+          statusCode: 200,
+          message: '휴대폰 인증 번호 생성 성공',
+          code: number,
+        };
+      }
+
+      this.logger.verbose(`휴대폰 인증 번호 생성 실패`);
+      throw new HttpException(
+        '휴대폰 인증 번호 생성 실패',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     this.logger.verbose(`일반 회원가입 휴대폰 인증 실패`);
     throw new HttpException(
       '등록된 휴대폰 번호가 존재합니다.',
-      HttpStatus.UNAUTHORIZED,
+      HttpStatus.CONFLICT,
     );
   }
 
-  async userSignupAuthPhoneTest(
+  async userSocialSignupAuthPhone(
+    user_id: string,
+    userAuthPhoneInputDto: UserAuthPhoneInputDto,
+  ): Promise<UserAuthPhoneOutputDto> {
+    const { phone_number } = userAuthPhoneInputDto;
+    const conn = getConnection();
+
+    const [found] = await conn.query(
+      `SELECT USER_ID FROM USER WHERE PHONE_NUM='${phone_number}' AND 
+       METHOD=(SELECT METHOD FROM USER WHERE USER_ID='${user_id}') AND STATUS='P'`,
+    );
+
+    if (!found) {
+      const number = await this.sendSMS(phone_number);
+
+      if (number !== 0) {
+        this.logger.verbose(`휴대폰 인증 번호 생성 성공`);
+        return {
+          statusCode: 200,
+          message: '휴대폰 인증 번호 생성 성공',
+          code: number,
+        };
+      }
+
+      this.logger.verbose(`휴대폰 인증 번호 생성 실패`);
+      throw new HttpException(
+        '휴대폰 인증 번호 생성 실패',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    this.logger.verbose(`소셜 회원가입 휴대폰 인증 실패`);
+    throw new HttpException(
+      '등록된 휴대폰 번호가 존재합니다.',
+      HttpStatus.CONFLICT,
+    );
+  }
+
+  async userGeneralSignupAuthPhoneTest(
     userAuthPhoneInputDto: UserAuthPhoneInputDto,
   ): Promise<UserAuthPhoneOutputDto> {
     const { phone_number } = userAuthPhoneInputDto;
@@ -185,21 +231,45 @@ export class UserService {
     this.logger.verbose(`일반 회원가입 휴대폰 인증 실패`);
     throw new HttpException(
       '등록된 휴대폰 번호가 존재합니다.',
-      HttpStatus.UNAUTHORIZED,
+      HttpStatus.CONFLICT,
+    );
+  }
+
+  async userSocialSignupAuthPhoneTest(
+    user_id: string,
+    userAuthPhoneInputDto: UserAuthPhoneInputDto,
+  ): Promise<UserAuthPhoneOutputDto> {
+    const { phone_number } = userAuthPhoneInputDto;
+    const conn = getConnection();
+
+    const [found] = await conn.query(
+      `SELECT USER_ID FROM USER WHERE PHONE_NUM='${phone_number}' AND 
+       METHOD=(SELECT METHOD FROM USER WHERE USER_ID='${user_id}') AND STATUS='P'`,
+    );
+
+    if (!found) {
+      const number: number =
+        Math.floor(Math.random() * (999999 - 111111 + 1)) + 111111;
+      this.logger.verbose(`휴대폰 인증 테스트 번호 생성 성공`);
+      return {
+        statusCode: 200,
+        message: '휴대폰 인증 번호 생성 성공',
+        code: number,
+      };
+    }
+
+    this.logger.verbose(`소셜 회원가입 휴대폰 인증 실패`);
+    throw new HttpException(
+      '등록된 휴대폰 번호가 존재합니다.',
+      HttpStatus.CONFLICT,
     );
   }
 
   async passwordFirstTest(passwordTestInputDto: PasswordTestInputDto) {
     const { password } = passwordTestInputDto;
 
-    const cryptoSalt = process.env.CRYPTOSALT;
-    const cryptoPassword = await pbkdf2(
-      password,
-      cryptoSalt,
-      parseInt(process.env.REPEAT_NUMBER),
-      parseInt(process.env.LENGTH),
-    );
-    const hashed = await cryptoPassword.toString(process.env.HASHED);
+    const hash = process.env.HASH;
+    const hashed = crypto.createHash(hash).update(password).digest('base64');
 
     return {
       password: hashed,
@@ -275,7 +345,6 @@ export class UserService {
 
   async generalSignUp(
     userSignupInputDto: UserSignupInputDto,
-    file: string,
   ): Promise<UserSignupOutputDto> {
     const {
       user_id,
@@ -288,22 +357,28 @@ export class UserService {
       detail_address,
       phone_verify,
     } = userSignupInputDto;
+    const conn = getConnection();
+    const [found] = await conn.query(
+      `SELECT USER_ID FROM USER WHERE PHONE_NUM='${phone_num}' AND ROLE_ID=2 AND STATUS='P'`,
+    );
 
-    if (!file) {
-      file = process.env.PROFILE_IMG_DEFAULT;
-    } else {
-      file = createImageURL(file);
+    if (found) {
+      this.logger.verbose(`일반 회원가입 실패`);
+      throw new HttpException(
+        '등록된 휴대폰 번호가 존재합니다.',
+        HttpStatus.CONFLICT,
+      );
     }
 
     const method = 'general';
     const verify = 'Y';
     const status = 'P';
     const role_id = 2;
+    const profile_img = process.env.PROFILE_IMG_DEFAULT;
 
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const conn = getConnection();
     const sql = `INSERT INTO USER(USER_ID, ROLE_ID, PASSWORD, NAME, BIRTH, EMAIL, PHONE_NUM, ADDRESS, 
                  DETAIL_ADDRESS, METHOD, VERIFY, STATUS, INSERT_DT, INSERT_ID, PROFILE_IMG) 
                  VALUES(?,?,?,?,?,?,?,?,?,?,?,?,NOW(),?,?)`;
@@ -321,7 +396,7 @@ export class UserService {
       verify,
       status,
       user_id,
-      file,
+      profile_img,
     ];
     try {
       if (phone_verify === 'Y') {
@@ -447,17 +522,26 @@ export class UserService {
     const conn = getConnection();
     const [user] = await conn.query(
       `SELECT NAME AS name, BIRTH AS birth, EMAIL AS email, PHONE_NUM AS phone_num, ADDRESS AS address, 
-       DETAIL_ADDRESS AS detail_address, METHOD AS method, PROFILE_IMG AS profile_img FROM USER 
-       WHERE USER_ID='${user_id}' AND VERIFY='Y' AND STATUS='P'`,
+       DETAIL_ADDRESS AS detail_address, METHOD AS method, PROFILE_IMG AS profile_img, VERIFY AS verify FROM USER 
+       WHERE USER_ID='${user_id}' AND STATUS='P'`,
     );
 
     if (user) {
-      this.logger.verbose(`User ${user_id} 회원 프로필 조회 성공`);
-      return {
-        statusCode: 200,
-        message: '회원 프로필 조회 성공',
-        data: user,
-      };
+      if (user.verify === 'Y') {
+        delete user.verify;
+
+        this.logger.verbose(`User ${user_id} 회원 프로필 조회 성공`);
+        return {
+          statusCode: 200,
+          message: '회원 프로필 조회 성공',
+          data: user,
+        };
+      }
+      this.logger.verbose(`User ${user_id} 회원 프로필 조회 실패`);
+      throw new HttpException(
+        '회원 프로필 추가정보가 등록되지 않은 회원 입니다.',
+        HttpStatus.NOT_FOUND,
+      );
     } else {
       this.logger.verbose(`User ${user_id} 회원 프로필 조회 실패`);
       throw new HttpException('회원 프로필 조회 실패', HttpStatus.BAD_REQUEST);
@@ -536,7 +620,7 @@ export class UserService {
     if (!found) {
       this.logger.verbose(`User ${user_id} 팔로우 ${follow_user_id} 실패`);
       throw new HttpException(
-        '존재하지 않는 유저입니다.',
+        '존재하지 않는 유저 입니다.',
         HttpStatus.NOT_FOUND,
       );
     }
@@ -598,49 +682,141 @@ export class UserService {
   async getUserFollowing(user_id: string): Promise<UserFollowwingOutputDto> {
     const conn = getConnection();
     const [count] = await conn.query(
-      `SELECT COUNT(FOLLOWING_USER_ID) AS count FROM FOLLOW WHERE USER_ID='${user_id}' AND FOLLOW_YN='Y'`,
+      `SELECT COUNT(FOLLOW_ID) AS count FROM FOLLOW WHERE USER_ID='${user_id}' AND FOLLOW_YN='Y'`,
     );
     const following = await conn.query(
-      `SELECT FOLLOWING_USER_ID AS following_user_id, PROFILE_IMG AS profile_img FROM FOLLOW INNER JOIN USER 
-       ON FOLLOW.FOLLOWING_USER_ID = USER.USER_ID 
-       WHERE FOLLOW.USER_ID='${user_id}' AND FOLLOW.FOLLOW_YN='Y'`,
+      `SELECT FOLLOWING_USER_ID AS following_user_id, NAME AS name, PROFILE_IMG AS profile_img, 
+       COUNT(PRODUCT.USER_ID) AS product_count FROM FOLLOW INNER JOIN USER ON FOLLOW.FOLLOWING_USER_ID = USER.USER_ID 
+       LEFT JOIN PRODUCT ON FOLLOW.FOLLOWING_USER_ID = PRODUCT.USER_ID AND DATE(PRODUCT.INSERT_DT) 
+       BETWEEN DATE_ADD(CURDATE(), INTERVAL -1 DAY) AND CURRENT_DATE() AND USE_YN='Y'
+       WHERE FOLLOW.USER_ID='${user_id}' AND FOLLOW.FOLLOW_YN='Y' GROUP BY following_user_id 
+       ORDER BY name ASC`,
     );
 
-    this.logger.verbose(`User ${user_id} 팔로잉 조회 성공`);
-    return {
-      statusCode: 200,
-      message: '회원 팔로잉 조회 성공',
-      count: parseInt(count.count),
-      data: following,
-    };
+    if (count && following) {
+      this.logger.verbose(`User ${user_id} 팔로잉 조회 성공`);
+      return {
+        statusCode: 200,
+        message: '회원 팔로잉 조회 성공',
+        user_count: parseInt(count.count),
+        data: following,
+      };
+    }
+
+    this.logger.verbose(`User ${user_id} 팔로잉 조회 실패`);
+    throw new HttpException('회원 팔로잉 조회 실패', HttpStatus.BAD_REQUEST);
+  }
+
+  async getUserTopSeller(): Promise<UserTopSellerOutputDto> {
+    const conn = getConnection();
+
+    try {
+      const found = await conn.query(`
+      SELECT user_id, RANK() OVER (ORDER BY sold_count DESC, star_count DESC) AS ranking, name, CAST(star_count AS CHAR) AS start_count, follower_count, 
+      sold_count, profile_img FROM(SELECT USER.USER_ID AS user_id, 
+      (SELECT AVG(STAR_COUNT) FROM REVIEW WHERE PRODUCT.USER_ID=REVIEW.PRODUCT_USER_ID AND REVIEW.USE_YN='Y') AS star_count,
+      (SELECT COUNT(FOLLOW_ID) FROM FOLLOW WHERE PRODUCT.USER_ID=FOLLOW.FOLLOWING_USER_ID AND FOLLOW.FOLLOW_YN='Y') AS follower_count, 
+      COUNT(*) AS sold_count, USER.NAME AS name, USER.PROFILE_IMG AS profile_img  
+      FROM PRODUCT INNER JOIN USER ON PRODUCT.USER_ID = USER.USER_ID AND PRODUCT.USE_YN='Y' AND USER.STATUS='P' AND PRODUCT.PRODUCT_ST='05' 
+      WHERE DATE(PRODUCT.INSERT_DT) BETWEEN LAST_DAY(NOW() - interval 1 MONTH) + interval 1 DAY AND LAST_DAY(NOW()) GROUP BY user_id)AS counts`);
+
+      this.logger.verbose(`이달의 탑 셀러 조회 성공`);
+      return {
+        statusCode: 200,
+        message: '이달의 탑 셀러 조회 성공',
+        data: found,
+      };
+    } catch (error) {
+      this.logger.verbose(`이달의 탑 셀러 조회 실패\n ${error}`);
+      throw new HttpException(
+        '이달의 탑 셀러 조회 실패',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  async getUserTopSellerAuth(user_id: string) {
+    const topSellerData: any = await this.getUserTopSeller();
+
+    if (topSellerData.statusCode === 200) {
+      const length = topSellerData.data.length;
+
+      for (let i = 0; i < length; i++) {
+        const follow_user_id = topSellerData.data[i].user_id;
+        const existFollow = await this.followConfirmation(
+          user_id,
+          follow_user_id,
+        );
+        topSellerData.data[i].follow = existFollow;
+      }
+      this.logger.verbose(`이달의 탑 셀러 조회 성공`);
+      return topSellerData;
+    }
+    this.logger.verbose(`이달의 탑 셀러 조회 실패\n`);
+    throw new HttpException('이달의 탑 셀러 조회 실패', HttpStatus.BAD_REQUEST);
+  }
+
+  private async followConfirmation(user_id: string, follow_user_id: string) {
+    const conn = getConnection();
+
+    if (user_id === follow_user_id) {
+      return 'me';
+    }
+    try {
+      const [found] = await conn.query(
+        `SELECT USER_ID AS user_id FROM FOLLOW 
+         WHERE USER_ID='${user_id}' AND FOLLOWING_USER_ID='${follow_user_id}'
+         AND FOLLOW_YN='Y'`,
+      );
+      if (!found) {
+        return 'notFollow';
+      }
+
+      return 'following';
+    } catch (error) {
+      this.logger.verbose(`팔로우 여부 조회 실패\n ${error}`);
+      throw new HttpException('팔로우 여부 조회 실패', HttpStatus.BAD_REQUEST);
+    }
   }
 
   async userLogout(user_id: string): Promise<UserLogoutOutputDto> {
     const conn = getConnection();
-    await conn.query(
-      `UPDATE USER SET REFRESH_TOKEN=NULL, UPDATE_DT=NOW(), UPDATE_ID='${user_id}' 
-       WHERE USER_ID='${user_id}' AND status='P'`,
-    );
 
-    this.logger.verbose(`User ${user_id} 회원 로그아웃 성공`);
-    return {
-      statusCode: 200,
-      message: '회원 로그아웃 성공',
-    };
+    try {
+      await conn.query(
+        `UPDATE USER SET REFRESH_TOKEN=NULL, UPDATE_DT=NOW(), UPDATE_ID='${user_id}' 
+         WHERE USER_ID='${user_id}' AND status='P'`,
+      );
+
+      this.logger.verbose(`User ${user_id} 회원 로그아웃 성공`);
+      return {
+        statusCode: 200,
+        message: '회원 로그아웃 성공',
+      };
+    } catch (error) {
+      this.logger.verbose(`User ${user_id} 회원 로그아웃 실패\n ${error}`);
+      throw new HttpException('회원 로그아웃 실패', HttpStatus.BAD_REQUEST);
+    }
   }
 
   async userWithdrawal(user_id: string): Promise<UserWithdrawalOutputDto> {
     const conn = getConnection();
-    await conn.query(
-      `UPDATE USER SET STATUS='D', NAME=NULL, PHONE_NUM=NULL, EMAIL=NULL, 
-       UPDATE_DT=NOW(), UPDATE_ID='${user_id}', PROFILE_IMG=NULL, REFRESH_TOKEN=NULL 
-       WHERE USER_ID='${user_id}' AND STATUS='P'`,
-    );
 
-    this.logger.verbose(`User ${user_id} 회원 탈퇴 성공`);
-    return {
-      statusCode: 200,
-      message: '회원 탈퇴 성공',
-    };
+    try {
+      await conn.query(
+        `UPDATE USER SET STATUS='D', NAME=NULL, PHONE_NUM=NULL, EMAIL=NULL, 
+         UPDATE_DT=NOW(), UPDATE_ID='${user_id}', PROFILE_IMG=NULL, REFRESH_TOKEN=NULL 
+         WHERE USER_ID='${user_id}' AND STATUS='P'`,
+      );
+
+      this.logger.verbose(`User ${user_id} 회원 탈퇴 성공`);
+      return {
+        statusCode: 200,
+        message: '회원 탈퇴 성공',
+      };
+    } catch (error) {
+      this.logger.verbose(`User ${user_id} 회원 탈퇴 실패\n ${error}`);
+      throw new HttpException('회원 탈퇴 실패', HttpStatus.BAD_REQUEST);
+    }
   }
 }

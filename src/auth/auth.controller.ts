@@ -1,26 +1,31 @@
 import {
+  Body,
   Controller,
   Get,
   Header,
   HttpCode,
   HttpStatus,
   Logger,
-  Query,
+  Post,
   Req,
   Res,
   UseGuards,
+  ValidationPipe,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import {
+  ApiBody,
   ApiOkResponse,
   ApiOperation,
-  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { UserSocialLoginOutputDto } from 'src/user/dto/user.login.dto';
 import { AuthService } from './auth.service';
-import { AccessTokenReissuanceOutputDto } from './dto/acess.token.dto';
+import {
+  AccessTokenReissuanceInputDto,
+  AccessTokenReissuanceOutputDto,
+} from './dto/acess.token.dto';
 import { UserDto } from './dto/user.dto';
 
 @ApiTags('인증 API')
@@ -70,7 +75,10 @@ export class AuthController {
     type: UserSocialLoginOutputDto,
   })
   @UseGuards(AuthGuard('kakao'))
-  async kakaoCallBack(@Req() req, @Res() res) {
+  async kakaoCallBack(
+    @Req() req,
+    @Res() res,
+  ): Promise<UserSocialLoginOutputDto> {
     const user = await this.authService.loginCallBack(req.user as UserDto);
     this.logger.verbose(`User ${req.user.social_id} 카카오 로그인 성공
     Payload: ${JSON.stringify(user)}`);
@@ -114,14 +122,13 @@ export class AuthController {
     );
   }
 
-  @Get('token/reissuance')
-  @ApiQuery({
-    name: 'refreshToken',
-    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMjMwNDcwNj',
-    description: 'refreshToken 값',
+  @Post('token/reissuance')
+  @ApiBody({
+    type: AccessTokenReissuanceInputDto,
+    description: '리프레시 토큰 값',
   })
   @ApiOperation({
-    summary: 'accessToken 재발급(완료)',
+    summary: 'accessToken 재발급 API(완료)',
     description: 'accessToken 재발급 요청',
   })
   @ApiOkResponse({
@@ -133,8 +140,11 @@ export class AuthController {
     description: 'accessToken 재발급 실패',
   })
   async accessTokenReissuance(
-    @Query() query,
+    @Body(ValidationPipe)
+    accessTokenReissuanceInputDto: AccessTokenReissuanceInputDto,
   ): Promise<AccessTokenReissuanceOutputDto> {
-    return await this.authService.accessTokenReissuance(query.refreshToken);
+    return await this.authService.accessTokenReissuance(
+      accessTokenReissuanceInputDto,
+    );
   }
 }

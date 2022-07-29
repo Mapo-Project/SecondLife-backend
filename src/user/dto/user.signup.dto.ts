@@ -10,20 +10,23 @@ import {
 
 //일반 회원가입 Input 데이터
 export class UserSignupInputDto {
-  @ApiProperty({ example: 'id', description: '아이디' })
+  @ApiProperty({ example: 'test', description: '아이디' })
   @IsString()
   @IsNotEmpty()
   @MinLength(4)
   @MaxLength(20)
   user_id: string;
 
-  @ApiProperty({ example: 'password', description: '비밀번호' })
+  @ApiProperty({
+    example: 'A6xnQhbz4Vx2HuGl4lXwZ5U2I8iziLRFnhP5eNfIRvQ=',
+    description: '비밀번호',
+  })
   @IsString()
   @IsNotEmpty()
   //정규 표현식
-  //최소 70자 이상으로 영문자 대문자, 영문자 소문자, 숫자, 특수문자가 각각 최소 1개 이상
+  //최소 40자 이상으로 영문자 대문자, 영문자 소문자, 숫자, 특수문자가 각각 최소 1개 이상
   @Matches(
-    /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$+= %^&*-]).{70,}$/,
+    /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$+= %^&*-]).{40,}$/,
     {
       message: 'password hash error',
     },
@@ -61,15 +64,6 @@ export class UserSignupInputDto {
   @ApiProperty({ example: 'Y', description: '휴대폰 인증 여부' })
   @IsNotEmpty()
   phone_verify: string;
-
-  @ApiProperty({
-    type: 'string',
-    format: 'binary',
-    name: 'profile',
-    required: false,
-    description: '프로필 이미지',
-  })
-  profile_img: string;
 }
 
 //일반 회원가입 Output 데이터

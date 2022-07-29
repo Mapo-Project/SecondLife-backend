@@ -14,7 +14,7 @@ export const multerOptions = {
       callback(null, true);
     } else {
       callback(
-        new HttpException('지원하지 않는 이미지 형식입니다.', 404),
+        new HttpException('지원하지 않는 이미지 형식입니다.', 400),
         false,
       );
     }

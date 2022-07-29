@@ -5,7 +5,7 @@ import { IsNotEmpty } from 'class-validator';
 export class UserFollowInputDto {
   @ApiProperty({
     name: 'follow_user_id',
-    description: '팔로우 / 언팔로우 할 아이디',
+    description: '팔로우 / 언팔로우 할 유저 아이디',
     example: 'secondLife',
   })
   @IsNotEmpty()
@@ -21,13 +21,13 @@ export class UserFollowOutputDto {
   statusCode: number;
 
   @ApiProperty({
-    example: '회원 팔로우 / 언팔로우 성공',
+    example: '회원 팔로우 성공 | 회원 언팔로우 성공',
     description: '설명',
   })
   message: string;
 
   @ApiProperty({
-    example: 'follow',
+    example: 'follow | unFollow',
     description: '팔로우 여부',
   })
   follow: 'follow' | 'unFollow';
@@ -38,8 +38,14 @@ export class UserFollowwingDto {
   @ApiProperty({ example: 'secondLife', description: '아이디' })
   following_user_id: string;
 
+  @ApiProperty({ example: '셀러', description: '이름' })
+  name: string;
+
   @ApiProperty({ example: 'img', description: '프로필 이미지' })
   profile_img: string;
+
+  @ApiProperty({ example: '0', description: '상품 카운트' })
+  product_count: string;
 }
 
 //회원 팔로잉 Output 데이터
@@ -60,7 +66,7 @@ export class UserFollowwingOutputDto {
     example: 1,
     description: '팔로잉 수',
   })
-  count: number;
+  user_count: number;
 
   @ApiProperty({ type: [UserFollowwingDto] })
   data: UserFollowwingDto;

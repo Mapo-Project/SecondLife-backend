@@ -9,16 +9,15 @@ export class UserLoginInputDto {
   user_id: string;
 
   @ApiProperty({
-    example:
-      'OQJ5fKSFQyd+geo1u8YkqYXMxUcdhOeCcgSEg2u46ykY8Wt7MaGp4nxOXFIGGsuAFsUihl3YDZtPs3ak5VC+rA==',
+    example: 'A6xnQhbz4Vx2HuGl4lXwZ5U2I8iziLRFnhP5eNfIRvQ=',
     description: '비밀번호',
   })
   @IsString()
   @IsNotEmpty()
   //정규 표현식
-  //최소 70자 이상으로 영문자 대문자, 영문자 소문자, 숫자, 특수문자가 각각 최소 1개 이상
+  //최소 40자 이상으로 영문자 대문자, 영문자 소문자, 숫자, 특수문자가 각각 최소 1개 이상
   @Matches(
-    /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$+= %^&*-]).{70,}$/,
+    /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$+= %^&*-]).{40,}$/,
     {
       message: 'password hash error',
     },

@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Param,
   Post,
   Query,
   Req,
@@ -54,6 +55,10 @@ import {
   ProfileDetailOutputDto,
   SelectProfileOutputDto,
 } from './dto/user.profile.dto';
+import {
+  UserTopSellerAuthOutputDto,
+  UserTopSellerOutputDto,
+} from './dto/user.seller.dto';
 import { UserSignupInputDto, UserSignupOutputDto } from './dto/user.signup.dto';
 import { UserWithdrawalOutputDto } from './dto/user.withdrawal.dto';
 import { multerOptions } from './multerOptions';
@@ -65,7 +70,7 @@ export class UserController {
   constructor(private userService: UserService) {}
 
   //일반회원 아이디 중복체크
-  @Get('duplicate/id')
+  @Get('general/duplicate/id/:user_id')
   @ApiOperation({
     summary: '일반회원 아이디 중복체크 API(완료)',
     description: '회원 아이디 입력',
@@ -79,13 +84,13 @@ export class UserController {
     description: 'Bad Request(user_id should not be empty)',
   })
   async userIdDuplicate(
-    @Query(ValidationPipe) userIdDuplicateInputDto: UserIdDuplicateInputDto,
+    @Param(ValidationPipe) userIdDuplicateInputDto: UserIdDuplicateInputDto,
   ): Promise<UserIdDuplicateOutputDto> {
     return await this.userService.userIdDuplicate(userIdDuplicateInputDto);
   }
 
   //일반 회원가입 휴대폰 인증
-  @Get('signup/auth/phone')
+  @Get('general/signup/auth/phone/:phone_number')
   @ApiOperation({
     summary: '일반 회원가입 휴대폰 인증 API(완료)',
     description: `회원 휴대폰 번호 입력
@@ -98,16 +103,58 @@ export class UserController {
   })
   @ApiResponse({
     status: 400,
+    description: 'Error: Bad Request',
+  })
+  @ApiResponse({
+    status: 409,
     description: '등록된 휴대폰 번호가 존재합니다.',
   })
-  async userSignupAuthPhone(
-    @Query(ValidationPipe) userAuthPhoneInputDto: UserAuthPhoneInputDto,
+  async userGeneralSignupAuthPhone(
+    @Param(ValidationPipe) userAuthPhoneInputDto: UserAuthPhoneInputDto,
   ): Promise<UserAuthPhoneOutputDto> {
-    return await this.userService.userSignupAuthPhone(userAuthPhoneInputDto);
+    return await this.userService.userGeneralSignupAuthPhone(
+      userAuthPhoneInputDto,
+    );
+  }
+
+  //소셜 회원가입 휴대폰 인증
+  @Get('social/signup/auth/phone/:phone_number')
+  @ApiOperation({
+    summary: '소셜 회원가입 휴대폰 인증 API(완료)',
+    description: `회원 휴대폰 번호 입력
+      
+      테스트 할 시 테스트용 api 이용해 주세요 요금..`,
+  })
+  @ApiOkResponse({
+    description: '인증번호',
+    type: UserAuthPhoneOutputDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Error: Bad Request',
+  })
+  @ApiResponse({
+    status: 401,
+    description: '인증 오류',
+  })
+  @ApiResponse({
+    status: 409,
+    description: '등록된 휴대폰 번호가 존재합니다.',
+  })
+  @UseGuards(AuthGuard())
+  @ApiBearerAuth()
+  async userSocialSignupAuthPhone(
+    @Req() req,
+    @Param(ValidationPipe) userAuthPhoneInputDto: UserAuthPhoneInputDto,
+  ): Promise<UserAuthPhoneOutputDto> {
+    return await this.userService.userSocialSignupAuthPhone(
+      req.user,
+      userAuthPhoneInputDto,
+    );
   }
 
   //일반 회원가입 휴대폰 인증(테스트용)
-  @Get('signup/auth/phone/test')
+  @Get('general/signup/auth/phone/test/:phone_number')
   @ApiOperation({
     summary: '일반 회원가입 휴대폰 인증 API(테스트용)',
     description: `회원 휴대폰 번호 입력`,
@@ -117,19 +164,45 @@ export class UserController {
     type: UserAuthPhoneOutputDto,
   })
   @ApiResponse({
-    status: 400,
+    status: 409,
     description: '등록된 휴대폰 번호가 존재합니다.',
   })
-  async userSignupAuthPhoneTest(
-    @Query(ValidationPipe) userAuthPhoneInputDto: UserAuthPhoneInputDto,
+  async userGeneralSignupAuthPhoneTest(
+    @Param(ValidationPipe) userAuthPhoneInputDto: UserAuthPhoneInputDto,
   ): Promise<UserAuthPhoneOutputDto> {
-    return await this.userService.userSignupAuthPhoneTest(
+    return await this.userService.userGeneralSignupAuthPhoneTest(
+      userAuthPhoneInputDto,
+    );
+  }
+
+  //소셜 회원가입 휴대폰 인증(테스트용)
+  @Get('social/signup/auth/phone/test/:phone_number')
+  @ApiOperation({
+    summary: '소셜 회원가입 휴대폰 인증 API(테스트용)',
+    description: `회원 휴대폰 번호 입력`,
+  })
+  @ApiOkResponse({
+    description: '인증번호',
+    type: UserAuthPhoneOutputDto,
+  })
+  @ApiResponse({
+    status: 409,
+    description: '등록된 휴대폰 번호가 존재합니다.',
+  })
+  @UseGuards(AuthGuard())
+  @ApiBearerAuth()
+  async userSocialSignupAuthPhoneTest(
+    @Req() req,
+    @Param(ValidationPipe) userAuthPhoneInputDto: UserAuthPhoneInputDto,
+  ): Promise<UserAuthPhoneOutputDto> {
+    return await this.userService.userSocialSignupAuthPhoneTest(
+      req.user,
       userAuthPhoneInputDto,
     );
   }
 
   //비밀번호 1차 암호화(프론트 테스트용)
-  @Get('/password/test')
+  @Get('general/password/test')
   @ApiOperation({ summary: '비밀번호 1차 암호화(프론트 테스트용)' })
   async passwordFirstTest(
     @Query(ValidationPipe) passwordTestInputDto: PasswordTestInputDto,
@@ -138,7 +211,7 @@ export class UserController {
   }
 
   //일반 회원 아이디 찾기
-  @Get('/find/id')
+  @Get('general/find/id')
   @ApiOperation({
     summary: '일반 회원 아이디 찾기 API(완료)',
     description: '일반 회원 아이디 찾기 입니다. 유저 닉네임, 이메일 정보 필수!',
@@ -159,7 +232,7 @@ export class UserController {
   }
 
   //일반 회원 비밀번호 변경
-  @Post('/change/password')
+  @Post('general/change/password')
   @ApiOperation({
     summary: '일반 회원 비밀번호 변경 API(완료)',
     description: '일반 회원 비밀번호 변경 입니다. 토큰 값 필수!',
@@ -199,12 +272,11 @@ export class UserController {
   }
 
   //일반 회원가입
-  @Post('/general/signup')
+  @Post('general/signup')
   @ApiOperation({
     summary: '일반 회원가입 API(완료)',
     description: '일반 회원가입 입니다.',
   })
-  @ApiConsumes('multipart/form-data')
   @ApiBody({
     description: '유저 정보',
     type: UserSignupInputDto,
@@ -223,28 +295,18 @@ export class UserController {
     description: '휴대폰 인증 실패',
   })
   @ApiResponse({
-    status: 404,
-    description: '지원하지 않는 이미지 형식',
-  })
-  @ApiResponse({
     status: 409,
     description: '중복된 entry가 존재합니다.',
   })
-  @ApiResponse({
-    status: 413,
-    description: '파일크기 제한',
-  })
-  @UseInterceptors(FileInterceptor('profile', multerOptions))
   async generalSignUp(
     @Body(ValidationPipe)
     userSignupInputDto: UserSignupInputDto,
-    @UploadedFile() file: string,
   ): Promise<UserSignupOutputDto> {
-    return await this.userService.generalSignUp(userSignupInputDto, file);
+    return await this.userService.generalSignUp(userSignupInputDto);
   }
 
   //일반 회원 로그인
-  @Post('/general/signin')
+  @Post('general/signin')
   @ApiOperation({
     summary: '일반 회원 로그인 API(완료)',
     description: '일반 회원 로그인 입니다. 1차 암호화 비밀번호 필요!',
@@ -322,6 +384,10 @@ export class UserController {
     status: 401,
     description: '인증 오류',
   })
+  @ApiResponse({
+    status: 404,
+    description: '회원 프로필 추가정보가 등록되지 않은 회원 입니다.',
+  })
   @ApiBearerAuth()
   @UseGuards(AuthGuard())
   async getUserProfile(@Req() req): Promise<SelectProfileOutputDto> {
@@ -394,15 +460,11 @@ export class UserController {
   })
   @ApiResponse({
     status: 400,
-    description: '회원 프로필 이미지 수정 실패',
+    description: 'Error: Bad Request',
   })
   @ApiResponse({
     status: 401,
     description: '인증 오류',
-  })
-  @ApiResponse({
-    status: 404,
-    description: '지원하지 않는 이미지 형식',
   })
   @ApiResponse({
     status: 413,
@@ -419,7 +481,7 @@ export class UserController {
   }
 
   //회원 팔로우 / 언팔로우
-  @Post('follow')
+  @Post('follow/:follow_user_id')
   @ApiOperation({
     summary: '팔로우 / 언팔로우 API(완료)',
     description: '회원 팔로우 / 언팔로우 입니다. 토큰 값 필수!',
@@ -433,14 +495,18 @@ export class UserController {
     description: '자기 자신을 팔로우 할 수 없습니다.',
   })
   @ApiResponse({
+    status: 401,
+    description: '인증 오류',
+  })
+  @ApiResponse({
     status: 404,
-    description: '존재하지 않는 유저입니다.',
+    description: '존재하지 않는 유저 입니다.',
   })
   @ApiBearerAuth()
   @UseGuards(AuthGuard())
   async userFollow(
     @Req() req,
-    @Query(ValidationPipe) userFollowInputDto: UserFollowInputDto,
+    @Param(ValidationPipe) userFollowInputDto: UserFollowInputDto,
   ): Promise<UserFollowOutputDto> {
     return await this.userService.userFollow(req.user, userFollowInputDto);
   }
@@ -459,14 +525,60 @@ export class UserController {
     status: 400,
     description: '회원 팔로잉 조회 실패',
   })
+  @ApiResponse({
+    status: 401,
+    description: '인증 오류',
+  })
   @ApiBearerAuth()
   @UseGuards(AuthGuard())
   async getUserFollowing(@Req() req): Promise<UserFollowwingOutputDto> {
     return await this.userService.getUserFollowing(req.user);
   }
 
+  //이달의 탑 셀러 조회(로그인x)
+  @Get('seller/top/select')
+  @ApiOperation({
+    summary: '이달의 탑 셀러 조회(로그인x) API(완료)',
+    description: '이달의 탑 셀러 조회 입니다.',
+  })
+  @ApiOkResponse({
+    description: '이달의 탑 셀러 조회 성공',
+    type: UserTopSellerOutputDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: '이달의 탑 셀러 조회 실패',
+  })
+  async getUserTopSeller(): Promise<UserTopSellerOutputDto> {
+    return await this.userService.getUserTopSeller();
+  }
+
+  //이달의 탑 셀러 조회(로그인o)
+  @Get('seller/top/select/auth')
+  @ApiOperation({
+    summary: '이달의 탑 셀러 조회(로그인o) API(완료)',
+    description: '이달의 탑 셀러 조회 입니다.',
+  })
+  @ApiOkResponse({
+    description: '이달의 탑 셀러 조회 성공',
+    type: UserTopSellerAuthOutputDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: '이달의 탑 셀러 조회 실패',
+  })
+  @ApiResponse({
+    status: 401,
+    description: '인증 오류',
+  })
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard())
+  async getUserTopSellerAuth(@Req() req) {
+    return await this.userService.getUserTopSellerAuth(req.user);
+  }
+
   //회원 로그아웃
-  @Get('/logout')
+  @Post('/logout')
   @ApiOperation({
     summary: '회원 로그아웃 API(완료)',
     description: '회원 로그아웃 입니다. 토큰 값 필수!',
@@ -474,6 +586,10 @@ export class UserController {
   @ApiOkResponse({
     description: '회원 로그아웃 성공',
     type: UserLogoutOutputDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: '회원 로그아웃 실패',
   })
   @ApiResponse({
     status: 401,
@@ -494,6 +610,10 @@ export class UserController {
   @ApiOkResponse({
     description: '회원 탈퇴 성공',
     type: UserWithdrawalOutputDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: '회원 탈퇴 실패',
   })
   @ApiResponse({
     status: 401,
