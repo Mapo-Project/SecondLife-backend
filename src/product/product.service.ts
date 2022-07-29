@@ -168,7 +168,7 @@ export class ProductService {
   async getProductWish(user_id: string): Promise<ProductWishSelectOutputDto> {
     const conn = getConnection();
     const [count] = await conn.query(
-      `SELECT COUNT(ID) AS count FROM WISH_LIST WHERE USER_ID='${user_id}' AND WISH_YN='Y'`,
+      `SELECT COUNT(WISH_ID) AS count FROM WISH_LIST WHERE USER_ID='${user_id}' AND WISH_YN='Y'`,
     );
     const wish = await conn.query(
       `SELECT WISH_LIST.PRODUCT_ID AS product_id, PRODUCT_IMG AS product_img FROM WISH_LIST INNER JOIN PRODUCT

@@ -36,7 +36,6 @@ import * as bcrypt from 'bcryptjs';
 import { UserSignupInputDto, UserSignupOutputDto } from './dto/user.signup.dto';
 import { UserLoginInputDto, UserLoginOutputDto } from './dto/user.login.dto';
 import { JwtService } from '@nestjs/jwt';
-import * as pbkdf2 from 'pbkdf2-sha256';
 import {
   UserFindIdInputDto,
   UserFindIdOutputDto,
@@ -269,14 +268,8 @@ export class UserService {
   async passwordFirstTest(passwordTestInputDto: PasswordTestInputDto) {
     const { password } = passwordTestInputDto;
 
-    const cryptoSalt = process.env.CRYPTOSALT;
-    const cryptoPassword = await pbkdf2(
-      password,
-      cryptoSalt,
-      parseInt(process.env.REPEAT_NUMBER),
-      parseInt(process.env.LENGTH),
-    );
-    const hashed = await cryptoPassword.toString(process.env.HASHED);
+    const hash = process.env.HASH;
+    const hashed = crypto.createHash(hash).update(password).digest('base64');
 
     return {
       password: hashed,
@@ -689,7 +682,7 @@ export class UserService {
   async getUserFollowing(user_id: string): Promise<UserFollowwingOutputDto> {
     const conn = getConnection();
     const [count] = await conn.query(
-      `SELECT COUNT(ID) AS count FROM FOLLOW WHERE USER_ID='${user_id}' AND FOLLOW_YN='Y'`,
+      `SELECT COUNT(FOLLOW_ID) AS count FROM FOLLOW WHERE USER_ID='${user_id}' AND FOLLOW_YN='Y'`,
     );
     const following = await conn.query(
       `SELECT FOLLOWING_USER_ID AS following_user_id, NAME AS name, PROFILE_IMG AS profile_img, 
@@ -722,7 +715,7 @@ export class UserService {
       SELECT user_id, RANK() OVER (ORDER BY sold_count DESC, star_count DESC) AS ranking, name, CAST(star_count AS CHAR) AS start_count, follower_count, 
       sold_count, profile_img FROM(SELECT USER.USER_ID AS user_id, 
       (SELECT AVG(STAR_COUNT) FROM REVIEW WHERE PRODUCT.USER_ID=REVIEW.PRODUCT_USER_ID AND REVIEW.USE_YN='Y') AS star_count,
-      (SELECT COUNT(ID) FROM FOLLOW WHERE PRODUCT.USER_ID=FOLLOW.FOLLOWING_USER_ID AND FOLLOW.FOLLOW_YN='Y') AS follower_count, 
+      (SELECT COUNT(FOLLOW_ID) FROM FOLLOW WHERE PRODUCT.USER_ID=FOLLOW.FOLLOWING_USER_ID AND FOLLOW.FOLLOW_YN='Y') AS follower_count, 
       COUNT(*) AS sold_count, USER.NAME AS name, USER.PROFILE_IMG AS profile_img  
       FROM PRODUCT INNER JOIN USER ON PRODUCT.USER_ID = USER.USER_ID AND PRODUCT.USE_YN='Y' AND USER.STATUS='P' AND PRODUCT.PRODUCT_ST='05' 
       WHERE DATE(PRODUCT.INSERT_DT) BETWEEN LAST_DAY(NOW() - interval 1 MONTH) + interval 1 DAY AND LAST_DAY(NOW()) GROUP BY user_id)AS counts`);
