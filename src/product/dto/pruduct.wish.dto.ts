@@ -38,6 +38,7 @@ export class ProductWishOutputDto {
 export class ProductWishDto {
   @ApiProperty({ example: 1, description: '상품 아이디' })
   product_id: number;
+
   @ApiProperty({ example: 'secondlife.jpg', description: '상품 이미지' })
   product_img: string;
 }
