@@ -26,3 +26,30 @@ export class PickupPlaceRegistrationOutputDto {
   })
   message: string;
 }
+
+//픽업 장소 데이터
+export class PickupPlaceDto {
+  @ApiProperty({
+    example: '서울시 마포구 성산로 4길 53 1층',
+    description: '주소',
+  })
+  address: string;
+}
+
+//픽업 장소 조회 Output 데이터
+export class PickupPlaceSelectOutputDto {
+  @ApiProperty({
+    example: 200,
+    description: '상태코드',
+  })
+  statusCode: number;
+
+  @ApiProperty({
+    example: '픽업 장소 조회 성공',
+    description: '설명',
+  })
+  message: string;
+
+  @ApiProperty({ type: [PickupPlaceDto] })
+  data: PickupPlaceDto;
+}

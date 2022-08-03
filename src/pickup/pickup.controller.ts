@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   Post,
   Req,
   UseGuards,
@@ -10,6 +11,7 @@ import { AuthGuard } from '@nestjs/passport';
 import {
   ApiBearerAuth,
   ApiBody,
+  ApiOkResponse,
   ApiOperation,
   ApiResponse,
   ApiTags,
@@ -17,6 +19,7 @@ import {
 import {
   PickupPlaceRegistrationInputDto,
   PickupPlaceRegistrationOutputDto,
+  PickupPlaceSelectOutputDto,
 } from './dto/pickup.place.dto';
 import {
   PickupRequestInputDto,
@@ -99,5 +102,29 @@ export class PickupController {
       req.user,
       pickupPlaceRegistrationInputDto,
     );
+  }
+
+  //픽업 장소 조회
+  @Get('place/select')
+  @ApiOperation({
+    summary: '픽업 장소 조회 API(완료)',
+    description: '픽업 장소 조회 입니다. 토큰 값 필수!',
+  })
+  @ApiOkResponse({
+    description: '픽업 장소 조회 성공',
+    type: PickupPlaceSelectOutputDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: '인증 오류',
+  })
+  @ApiResponse({
+    status: 400,
+    description: '픽업 장소 조회 실패',
+  })
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard())
+  async getPickupPlace(@Req() req): Promise<PickupPlaceSelectOutputDto> {
+    return await this.pickupService.getPickupPlace(req.user);
   }
 }

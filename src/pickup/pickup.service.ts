@@ -3,6 +3,7 @@ import { getConnection } from 'typeorm';
 import {
   PickupPlaceRegistrationInputDto,
   PickupPlaceRegistrationOutputDto,
+  PickupPlaceSelectOutputDto,
 } from './dto/pickup.place.dto';
 import { PickupRequestInputDto } from './dto/pickup.request.dto';
 
@@ -40,6 +41,27 @@ export class PickupService {
     } catch (error) {
       this.logger.verbose(`User ${user_id} 픽업 장소 등록 실패\n ${error}`);
       throw new HttpException('픽업 장소 등록 실패', HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async getPickupPlace(user_id: string): Promise<PickupPlaceSelectOutputDto> {
+    const conn = getConnection();
+
+    try {
+      const found = await conn.query(
+        `SELECT PICK_UP_LOC_ID AS pick_up_loc_id, ADDRESS AS address FROM PICK_UP_LOC 
+         WHERE USER_ID='${user_id}' AND USE_YN='Y' ORDER BY INSERT_DT DESC LIMIT 3`,
+      );
+
+      this.logger.verbose(`User ${user_id} 픽업 장소 조회 성공`);
+      return {
+        statusCode: 200,
+        message: '픽업 장소 조회 성공',
+        data: found,
+      };
+    } catch (error) {
+      this.logger.verbose(`User ${user_id} 픽업 장소 조회\n ${error}`);
+      throw new HttpException('픽업 장소 조회 실패', HttpStatus.BAD_REQUEST);
     }
   }
 }
