@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsNumberString, IsString } from 'class-validator';
 
 //픽업 장소 등록 Input 데이터
 export class PickupPlaceRegistrationInputDto {
@@ -52,4 +52,31 @@ export class PickupPlaceSelectOutputDto {
 
   @ApiProperty({ type: [PickupPlaceDto] })
   data: PickupPlaceDto;
+}
+
+//픽업 장소 삭제 Input 데이터
+export class PickupPlaceDeleteInputDto {
+  @ApiProperty({
+    name: 'pick_up_loc_id',
+    description: '픽업 장소 삭제할 아이디',
+    example: 1,
+  })
+  @IsNotEmpty()
+  @IsNumberString()
+  pick_up_loc_id: number;
+}
+
+//픽업 장소 삭제 Output 데이터
+export class PickupPlaceDeleteOutputDto {
+  @ApiProperty({
+    example: 200,
+    description: '상태코드',
+  })
+  statusCode: number;
+
+  @ApiProperty({
+    example: '픽업 장소 삭제 성공',
+    description: '설명',
+  })
+  message: string;
 }

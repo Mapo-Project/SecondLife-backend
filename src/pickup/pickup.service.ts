@@ -1,6 +1,8 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { getConnection } from 'typeorm';
 import {
+  PickupPlaceDeleteInputDto,
+  PickupPlaceDeleteOutputDto,
   PickupPlaceRegistrationInputDto,
   PickupPlaceRegistrationOutputDto,
   PickupPlaceSelectOutputDto,
@@ -62,6 +64,39 @@ export class PickupService {
     } catch (error) {
       this.logger.verbose(`User ${user_id} 픽업 장소 조회\n ${error}`);
       throw new HttpException('픽업 장소 조회 실패', HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async deletePickupPlace(
+    user_id: string,
+    pickupPlaceDeleteInputDto: PickupPlaceDeleteInputDto,
+  ): Promise<PickupPlaceDeleteOutputDto> {
+    const { pick_up_loc_id } = pickupPlaceDeleteInputDto;
+    const conn = getConnection();
+
+    const [found] = await conn.query(
+      `SELECT PICK_UP_LOC_ID FROM PICK_UP_LOC WHERE PICK_UP_LOC_ID='${pick_up_loc_id}' AND USE_YN='Y'`,
+    );
+
+    if (!found) {
+      this.logger.verbose(`User ${user_id} pick_up_loc_id NOT_FOUND`);
+      throw new HttpException('pick_up_loc_id NOT_FOUND', HttpStatus.NOT_FOUND);
+    }
+
+    try {
+      await conn.query(
+        `UPDATE PICK_UP_LOC SET USE_YN='N', UPDATE_DT=NOW(), UPDATE_ID='${user_id}'
+         WHERE PICK_UP_LOC_ID='${pick_up_loc_id}' AND USE_YN='Y'`,
+      );
+
+      this.logger.verbose(`User ${user_id} 픽업 장소 삭제 성공`);
+      return {
+        statusCode: 200,
+        message: '픽업 장소 삭제 성공',
+      };
+    } catch (error) {
+      this.logger.verbose(`User ${user_id} 픽업 장소 삭제 실패\n ${error}`);
+      throw new HttpException('픽업 장소 삭제 실패', HttpStatus.BAD_REQUEST);
     }
   }
 }

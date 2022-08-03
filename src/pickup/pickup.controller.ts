@@ -1,7 +1,9 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  Param,
   Post,
   Req,
   UseGuards,
@@ -17,6 +19,8 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import {
+  PickupPlaceDeleteInputDto,
+  PickupPlaceDeleteOutputDto,
   PickupPlaceRegistrationInputDto,
   PickupPlaceRegistrationOutputDto,
   PickupPlaceSelectOutputDto,
@@ -126,5 +130,39 @@ export class PickupController {
   @UseGuards(AuthGuard())
   async getPickupPlace(@Req() req): Promise<PickupPlaceSelectOutputDto> {
     return await this.pickupService.getPickupPlace(req.user);
+  }
+
+  //픽업 장소 삭제
+  @Delete('place/:pick_up_loc_id')
+  @ApiOperation({
+    summary: '픽업 장소 삭제 API(완료)',
+    description: '픽업 장소 삭제 입니다. 토큰 값 필수!',
+  })
+  @ApiOkResponse({
+    description: '픽업 장소 삭제 성공',
+    type: PickupPlaceDeleteOutputDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: '픽업 장소 삭제 실패',
+  })
+  @ApiResponse({
+    status: 401,
+    description: '인증 오류',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'pick_up_loc_id NOT_FOUND',
+  })
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard())
+  async deletePickupPlace(
+    @Req() req,
+    @Param(ValidationPipe) pickupPlaceDeleteInputDto: PickupPlaceDeleteInputDto,
+  ): Promise<PickupPlaceDeleteOutputDto> {
+    return await this.pickupService.deletePickupPlace(
+      req.user,
+      pickupPlaceDeleteInputDto,
+    );
   }
 }
