@@ -17,7 +17,6 @@ export class AuthService {
   async loginCallBack(userDto: UserDto): Promise<UserSocialLoginOutputDto> {
     const { social_id, method, email, profile_img } = userDto;
     const verify = 'N';
-    const status = 'P';
     const role_id = 1;
 
     if (!social_id) {
@@ -42,8 +41,8 @@ export class AuthService {
         expiresIn: `${process.env.REFRESH_JWT_SECRET_TIME}m`,
       });
 
-      const sql = `INSERT INTO USER(USER_ID, ROLE_ID, SOCIAL_ID, METHOD, EMAIL, VERIFY, STATUS, INSERT_DT, INSERT_ID, PROFILE_IMG, REFRESH_TOKEN) 
-                   VALUES(?,?,?,?,?,?,?,NOW(),?,?,?)`;
+      const sql = `INSERT INTO USER(USER_ID, ROLE_ID, SOCIAL_ID, METHOD, EMAIL, VERIFY, INSERT_DT, INSERT_ID, PROFILE_IMG, REFRESH_TOKEN) 
+                   VALUES(?,?,?,?,?,?,NOW(),?,?,?)`;
       const params = [
         user_id,
         role_id,

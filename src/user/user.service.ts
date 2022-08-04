@@ -372,7 +372,6 @@ export class UserService {
 
     const method = 'general';
     const verify = 'Y';
-    const status = 'P';
     const role_id = 2;
     const profile_img = process.env.PROFILE_IMG_DEFAULT;
 
@@ -380,8 +379,8 @@ export class UserService {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     const sql = `INSERT INTO USER(USER_ID, ROLE_ID, PASSWORD, NAME, BIRTH, EMAIL, PHONE_NUM, ADDRESS, 
-                 DETAIL_ADDRESS, METHOD, VERIFY, STATUS, INSERT_DT, INSERT_ID, PROFILE_IMG) 
-                 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,NOW(),?,?)`;
+                 DETAIL_ADDRESS, METHOD, VERIFY, INSERT_DT, INSERT_ID, PROFILE_IMG) 
+                 VALUES(?,?,?,?,?,?,?,?,?,?,?,NOW(),?,?)`;
     const params = [
       user_id,
       role_id,
@@ -394,7 +393,6 @@ export class UserService {
       detail_address,
       method,
       verify,
-      status,
       user_id,
       profile_img,
     ];
@@ -665,8 +663,8 @@ export class UserService {
         };
       }
     }
-    const sql = `INSERT INTO FOLLOW(USER_ID, FOLLOWING_USER_ID, FOLLOW_YN, INSERT_DT, INSERT_ID)
-                 VALUES(?,?,'Y',NOW(),?)`;
+    const sql = `INSERT INTO FOLLOW(USER_ID, FOLLOWING_USER_ID, INSERT_DT, INSERT_ID)
+                 VALUES(?,?,NOW(),?)`;
     const params = [user_id, follow_user_id, user_id];
 
     await conn.query(sql, params);

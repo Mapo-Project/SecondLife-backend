@@ -151,8 +151,8 @@ export class ProductService {
         };
       }
     }
-    const sql = `INSERT INTO WISH_LIST(USER_ID, PRODUCT_ID, WISH_YN, INSERT_DT, INSERT_ID)
-                 VALUES(?,?,'Y',NOW(),?)`;
+    const sql = `INSERT INTO WISH_LIST(USER_ID, PRODUCT_ID, INSERT_DT, INSERT_ID)
+                 VALUES(?,?,NOW(),?)`;
     const params = [user_id, product_id, user_id];
 
     await conn.query(sql, params);

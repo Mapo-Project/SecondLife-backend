@@ -59,11 +59,11 @@ export class PickupPlaceDeleteInputDto {
   @ApiProperty({
     name: 'pick_up_loc_id',
     description: '픽업 장소 삭제할 아이디',
-    example: 1,
+    example: '1',
   })
   @IsNotEmpty()
   @IsNumberString()
-  pick_up_loc_id: number;
+  pick_up_loc_id: string;
 }
 
 //픽업 장소 삭제 Output 데이터

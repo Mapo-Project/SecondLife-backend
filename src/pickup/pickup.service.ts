@@ -7,7 +7,11 @@ import {
   PickupPlaceRegistrationOutputDto,
   PickupPlaceSelectOutputDto,
 } from './dto/pickup.place.dto';
-import { PickupRequestInputDto } from './dto/pickup.request.dto';
+import {
+  PickupRequestInputDto,
+  PickupRequestOutputDto,
+} from './dto/pickup.request.dto';
+import uuidRandom from './uuidRandom';
 
 @Injectable()
 export class PickupService {
@@ -16,10 +20,66 @@ export class PickupService {
   async pickupRequest(
     user_id: string,
     pickupRequestInputDto: PickupRequestInputDto,
-  ) {
-    const conn = getConnection();
+  ): Promise<PickupRequestOutputDto> {
+    const pick_up_id = uuidRandom();
+    const {
+      pick_up_num,
+      address,
+      green_bag_s,
+      green_bag_m,
+      green_bag_l,
+      method_org,
+      pick_up_dt,
+      pick_up_tm,
+      green_bag_yn,
+    } = pickupRequestInputDto;
+    const green_back_num = green_bag_s + green_bag_m + green_bag_l;
 
-    const found = await conn.query(``);
+    if (pick_up_num > 60) {
+      this.logger.verbose(`User ${user_id} 픽업 갯수 초과`);
+      throw new HttpException('픽업 갯수 초과', HttpStatus.BAD_REQUEST);
+    }
+
+    if (green_back_num > 3) {
+      this.logger.verbose(`User ${user_id} 그린백 갯수 초과`);
+      throw new HttpException('그린백 갯수 초과', HttpStatus.BAD_REQUEST);
+    }
+
+    const conn = getConnection();
+    const sql =
+      `INSERT INTO PICK_UP(PICK_UP_ID, USER_ID, PICK_UP_NUM, ADDRESS, METHOD_ORGANIZING, 
+                 PICK_UP_DATE, PICK_UP_TIME, GREEN_BAG_YN, INSERT_DT, INSERT_ID)
+                 VALUES(?,?,?,?,?,?,?,?,NOW(),?);` +
+      `INSERT INTO GREEN_BAG(PICK_UP_ID, GREEN_BAG_S, GREEN_BAG_M, GREEN_BAG_L)
+                 VALUES(?,?,?,?);`;
+    const params = [
+      pick_up_id,
+      user_id,
+      pick_up_num,
+      address,
+      method_org,
+      pick_up_dt,
+      pick_up_tm,
+      green_bag_yn,
+      user_id,
+      pick_up_id,
+      green_bag_s,
+      green_bag_m,
+      green_bag_l,
+    ];
+
+    try {
+      await conn.query(sql, params);
+
+      this.logger.verbose(`User ${user_id} 픽업 신청 성공`);
+      return {
+        statusCode: 201,
+        message: '픽업 신청 성공',
+      };
+    } catch (error) {
+      this.logger.verbose(`User ${user_id} 픽업 신청 실패\n ${error}`);
+      throw new HttpException('픽업 신청 실패', HttpStatus.BAD_REQUEST);
+    }
   }
 
   async pickupPlaceRegistration(

@@ -39,7 +39,7 @@ export class PickupController {
   //픽업 신청
   @Post('request')
   @ApiOperation({
-    summary: '픽업 신청 API()',
+    summary: '픽업 신청 API(완료)',
     description: '픽업 신청 입니다. 토큰 값 필수!',
   })
   @ApiBody({
@@ -65,7 +65,7 @@ export class PickupController {
     @Req() req,
     @Body(ValidationPipe)
     pickupRequestInputDto: PickupRequestInputDto,
-  ) {
+  ): Promise<PickupRequestOutputDto> {
     return await this.pickupService.pickupRequest(
       req.user,
       pickupRequestInputDto,
