@@ -59,3 +59,42 @@ export class PickupRequestOutputDto {
   })
   message: string;
 }
+
+//픽업 신청 데이터
+export class PickupRequestDto {
+  @ApiProperty({
+    example: '423d540c-e444-4c39-8db8-ec6bba4a2ce3',
+    description: '픽업 아이디',
+  })
+  pick_up_id: string;
+
+  @ApiProperty({ example: 3, description: '픽업 물품 수량' })
+  pick_up_num: number;
+
+  @ApiProperty({
+    example: '서울시 마포구 성산로 4길 53 1층',
+    description: '주소',
+  })
+  address: string;
+
+  @ApiProperty({ example: '', description: '정리법' })
+  method_organizing: string;
+}
+
+//픽업 신청 조회 Output 데이터
+export class PickupRequestSelectOutputDto {
+  @ApiProperty({
+    example: 200,
+    description: '상태코드',
+  })
+  statusCode: number;
+
+  @ApiProperty({
+    example: '픽업 신청 조회 성공',
+    description: '설명',
+  })
+  message: string;
+
+  @ApiProperty({ type: [PickupRequestDto] })
+  data: PickupRequestDto;
+}

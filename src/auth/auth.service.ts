@@ -50,7 +50,6 @@ export class AuthService {
         method,
         email,
         verify,
-        status,
         user_id,
         profile_img,
         refreshToken,

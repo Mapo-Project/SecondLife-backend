@@ -82,6 +82,26 @@ export class PickupService {
     }
   }
 
+  async getPickupRequest(user_id: string) {
+    const conn = getConnection();
+
+    try {
+      const found = await conn.query(
+        `SELECT * FROM PICK_UP WHERE USER_ID='${user_id}' AND USE_YN='Y'`,
+      );
+
+      this.logger.verbose(`User ${user_id} 픽업 신청 조회 성공`);
+      return {
+        statusCode: 200,
+        message: '픽업 신청 조회 성공',
+        data: found,
+      };
+    } catch (error) {
+      this.logger.verbose(`User ${user_id} 픽업 신청 조회 실패\n ${error}`);
+      throw new HttpException('픽업 신청 실패', HttpStatus.BAD_REQUEST);
+    }
+  }
+
   async pickupPlaceRegistration(
     user_id: string,
     pickupPlaceRegistrationInputDto: PickupPlaceRegistrationInputDto,

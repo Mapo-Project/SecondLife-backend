@@ -28,6 +28,7 @@ import {
 import {
   PickupRequestInputDto,
   PickupRequestOutputDto,
+  PickupRequestSelectOutputDto,
 } from './dto/pickup.request.dto';
 import { PickupService } from './pickup.service';
 
@@ -43,7 +44,7 @@ export class PickupController {
     description: '픽업 신청 입니다. 토큰 값 필수!',
   })
   @ApiBody({
-    description: '등록할 상품 정보',
+    description: '등록할 픽업 신청 정보',
     type: PickupRequestInputDto,
   })
   @ApiResponse({
@@ -52,12 +53,12 @@ export class PickupController {
     type: PickupRequestOutputDto,
   })
   @ApiResponse({
-    status: 401,
-    description: '인증 오류',
-  })
-  @ApiResponse({
     status: 400,
     description: '픽업 신청 실패',
+  })
+  @ApiResponse({
+    status: 401,
+    description: '인증 오류',
   })
   @ApiBearerAuth()
   @UseGuards(AuthGuard())
@@ -70,6 +71,30 @@ export class PickupController {
       req.user,
       pickupRequestInputDto,
     );
+  }
+
+  //픽업 신청 조회
+  @Get('request/select')
+  @ApiOperation({
+    summary: '픽업 신청 조회 API(1차 완료)',
+    description: '픽업 신청 조회 입니다. 토큰 값 필수!',
+  })
+  @ApiOkResponse({
+    description: '픽업 신청 조회 성공',
+    type: PickupRequestSelectOutputDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: '픽업 신청 조회 실패',
+  })
+  @ApiResponse({
+    status: 401,
+    description: '인증 오류',
+  })
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard())
+  async getPickupRequest(@Req() req) {
+    return await this.pickupService.getPickupRequest(req.user);
   }
 
   //픽업 장소 등록
