@@ -6,11 +6,11 @@ export class ProductWishInputDto {
   @ApiProperty({
     name: 'product_id',
     description: '찜 등록 / 찜 해제 할 상품 아이디',
-    example: 1,
+    example: '1',
   })
   @IsNotEmpty()
   @IsNumberString()
-  product_id: number;
+  product_id: string;
 }
 
 //상품 찜 등록 / 찜 해제 Output 데이터
@@ -38,6 +38,7 @@ export class ProductWishOutputDto {
 export class ProductWishDto {
   @ApiProperty({ example: 1, description: '상품 아이디' })
   product_id: number;
+
   @ApiProperty({ example: 'secondlife.jpg', description: '상품 이미지' })
   product_img: string;
 }

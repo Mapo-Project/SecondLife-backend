@@ -116,6 +116,10 @@ export class ProductController {
     description: 'Error: Bad Request',
   })
   @ApiResponse({
+    status: 401,
+    description: '인증 오류',
+  })
+  @ApiResponse({
     status: 404,
     description: '존재하지 않는 상품 입니다.',
   })

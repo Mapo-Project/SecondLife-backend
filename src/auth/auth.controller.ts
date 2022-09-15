@@ -36,19 +36,25 @@ export class AuthController {
 
   @Get('login')
   @ApiOperation({
-    summary: '로그인 페이지(테스트용)',
-    description: `카카오 로그인 페이지 주소 입니다.  
+    summary: '로그인 페이지(테스트)',
+    description: `로그인 페이지 주소 입니다.  
     
     https://cozy-rabanadas-e9e588.netlify.app`,
   })
   @Header('Content-Type', 'text/html')
-  getKakaoLoginPage(): string {
+  getLoginPage(): string {
     return `
       <div>
         <h1>카카오 로그인</h1>
 
         <form action="kakao" method="GET">
           <input type="submit" value="카카오로그인" />
+        </form>
+
+        <h1>구글 로그인</h1>
+
+        <form action="google" method="GET">
+          <input type="submit" value="구글로그인" />
         </form>
       </div>
     `;
