@@ -140,7 +140,7 @@ export class UserService {
     const conn = getConnection();
 
     const [found] = await conn.query(
-      `SELECT USER_ID FROM USER WHERE PHONE_NUM='${phone_number}' AND ROLE_ID=2 AND STATUS='P'`,
+      `SELECT USER_ID FROM USER WHERE PHONE_NUM='${phone_number}' AND ROLE_ID=2 AND STATUS='P';`,
     );
 
     if (!found) {
@@ -178,7 +178,7 @@ export class UserService {
 
     const [found] = await conn.query(
       `SELECT USER_ID FROM USER WHERE PHONE_NUM='${phone_number}' AND 
-       METHOD=(SELECT METHOD FROM USER WHERE USER_ID='${user_id}') AND STATUS='P'`,
+       METHOD=(SELECT METHOD FROM USER WHERE USER_ID='${user_id}') AND STATUS='P';`,
     );
 
     if (!found) {
@@ -214,7 +214,7 @@ export class UserService {
     const conn = getConnection();
 
     const [found] = await conn.query(
-      `SELECT USER_ID FROM USER WHERE PHONE_NUM='${phone_number}' AND ROLE_ID=2 AND STATUS='P'`,
+      `SELECT USER_ID FROM USER WHERE PHONE_NUM='${phone_number}' AND ROLE_ID=2 AND STATUS='P';`,
     );
 
     if (!found) {
@@ -244,7 +244,7 @@ export class UserService {
 
     const [found] = await conn.query(
       `SELECT USER_ID FROM USER WHERE PHONE_NUM='${phone_number}' AND 
-       METHOD=(SELECT METHOD FROM USER WHERE USER_ID='${user_id}') AND STATUS='P'`,
+       METHOD=(SELECT METHOD FROM USER WHERE USER_ID='${user_id}') AND STATUS='P';`,
     );
 
     if (!found) {
@@ -283,7 +283,7 @@ export class UserService {
 
     const conn = getConnection();
     const [found] = await conn.query(
-      `SELECT USER_ID FROM USER WHERE NAME='${name}' AND EMAIL='${email}' AND STATUS='P' `,
+      `SELECT USER_ID FROM USER WHERE NAME='${name}' AND EMAIL='${email}' AND STATUS='P';`,
     );
 
     if (found) {
@@ -309,7 +309,7 @@ export class UserService {
 
     const conn = getConnection();
     const [user] = await conn.query(
-      `SELECT USER_ID, PASSWORD FROM USER WHERE USER_ID='${user_id}' AND STATUS='P' AND ROLE_ID=2 AND VERIFY='Y'`,
+      `SELECT USER_ID, PASSWORD FROM USER WHERE USER_ID='${user_id}' AND STATUS='P' AND ROLE_ID=2 AND VERIFY='Y';`,
     );
 
     if (user && (await bcrypt.compare(change_password, user.PASSWORD))) {
@@ -326,7 +326,7 @@ export class UserService {
 
       await conn.query(
         `UPDATE USER SET PASSWORD='${hashedPassword}', UPDATE_DT=NOW(), UPDATE_ID='${user_id}' 
-        WHERE USER_ID='${user_id}' AND STATUS='P' AND ROLE_ID=2 AND VERIFY='Y'`,
+        WHERE USER_ID='${user_id}' AND STATUS='P' AND ROLE_ID=2 AND VERIFY='Y';`,
       );
 
       this.logger.verbose(`User ${user_id} 일반 회원 비밀번호 변경 성공`);
@@ -359,7 +359,7 @@ export class UserService {
     } = userSignupInputDto;
     const conn = getConnection();
     const [found] = await conn.query(
-      `SELECT USER_ID FROM USER WHERE PHONE_NUM='${phone_num}' AND ROLE_ID=2 AND STATUS='P'`,
+      `SELECT USER_ID FROM USER WHERE PHONE_NUM='${phone_num}' AND ROLE_ID=2 AND STATUS='P';`,
     );
 
     if (found) {
@@ -380,7 +380,7 @@ export class UserService {
 
     const sql = `INSERT INTO USER(USER_ID, ROLE_ID, PASSWORD, NAME, BIRTH, EMAIL, PHONE_NUM, ADDRESS, 
                  DETAIL_ADDRESS, METHOD, VERIFY, INSERT_DT, INSERT_ID, PROFILE_IMG) 
-                 VALUES(?,?,?,?,?,?,?,?,?,?,?,NOW(),?,?)`;
+                 VALUES(?,?,?,?,?,?,?,?,?,?,?,NOW(),?,?);`;
     const params = [
       user_id,
       role_id,
@@ -427,7 +427,7 @@ export class UserService {
     const { user_id, password } = userLoginInputDto;
     const conn = getConnection();
     const [user] = await conn.query(
-      `SELECT USER_ID, PASSWORD FROM USER WHERE USER_ID='${user_id}' AND STATUS='P' AND ROLE_ID=2`,
+      `SELECT USER_ID, PASSWORD FROM USER WHERE USER_ID='${user_id}' AND STATUS='P' AND ROLE_ID=2;`,
     );
 
     if (user && (await bcrypt.compare(password, user.PASSWORD))) {
@@ -441,7 +441,7 @@ export class UserService {
 
       await conn.query(
         `UPDATE USER SET REFRESH_TOKEN='${refreshToken}', UPDATE_DT=NOW(), UPDATE_ID='${user_id}' 
-         WHERE USER_ID='${user_id}' AND STATUS='P'`,
+         WHERE USER_ID='${user_id}' AND STATUS='P';`,
       );
 
       const loginObject = {
@@ -483,7 +483,7 @@ export class UserService {
 
     const conn = getConnection();
     const [found] = await conn.query(
-      `SELECT USER_ID FROM USER WHERE USER_ID='${user_id}' AND STATUS='P' AND VERIFY='Y'`,
+      `SELECT USER_ID FROM USER WHERE USER_ID='${user_id}' AND STATUS='P' AND VERIFY='Y';`,
     );
 
     if (!found) {
@@ -491,7 +491,7 @@ export class UserService {
         await conn.query(
           `UPDATE USER SET NAME='${name}', BIRTH='${birth}', PHONE_NUM='${phone_num}', ADDRESS='${address}', 
            DETAIL_ADDRESS='${detail_address}', VERIFY='Y', UPDATE_DT=NOW(), UPDATE_ID='${user_id}'
-           WHERE USER_ID='${user_id}' AND STATUS='P'`,
+           WHERE USER_ID='${user_id}' AND STATUS='P';`,
         );
         this.logger.verbose(`User ${user_id} 회원 프로필 추가정보 등록 성공`);
         return {
@@ -521,7 +521,7 @@ export class UserService {
     const [user] = await conn.query(
       `SELECT NAME AS name, BIRTH AS birth, EMAIL AS email, PHONE_NUM AS phone_num, ADDRESS AS address, 
        DETAIL_ADDRESS AS detail_address, METHOD AS method, PROFILE_IMG AS profile_img, VERIFY AS verify FROM USER 
-       WHERE USER_ID='${user_id}' AND STATUS='P'`,
+       WHERE USER_ID='${user_id}' AND STATUS='P';`,
     );
 
     if (user) {
@@ -558,7 +558,7 @@ export class UserService {
       await conn.query(
         `UPDATE USER SET NAME='${name}', BIRTH='${birth}', EMAIL='${email}', PHONE_NUM='${phone_num}', 
          ADDRESS='${address}', DETAIL_ADDRESS='${detail_address}', UPDATE_DT=NOW(), UPDATE_ID='${user_id}'
-         WHERE USER_ID='${user_id}' AND VERIFY='Y' AND STATUS='P' `,
+         WHERE USER_ID='${user_id}' AND VERIFY='Y' AND STATUS='P';`,
       );
 
       this.logger.verbose(`User ${user_id} 회원 프로필 수정 성공`);
@@ -587,7 +587,7 @@ export class UserService {
 
       await conn.query(
         `UPDATE USER SET PROFILE_IMG='${generatedFile}', UPDATE_DT=NOW(), UPDATE_ID='${user_id}'
-          WHERE USER_ID='${user_id}' AND VERIFY='Y' AND STATUS='P' `,
+          WHERE USER_ID='${user_id}' AND VERIFY='Y' AND STATUS='P';`,
       );
 
       this.logger.verbose(`User ${user_id} 회원 프로필 이미지 수정 성공`);
@@ -612,7 +612,7 @@ export class UserService {
     const conn = getConnection();
 
     const [found] = await conn.query(
-      `SELECT USER_ID AS user_id FROM USER WHERE USER_ID='${follow_user_id}' AND STATUS='P' AND VERIFY='Y'`,
+      `SELECT USER_ID AS user_id FROM USER WHERE USER_ID='${follow_user_id}' AND STATUS='P' AND VERIFY='Y';`,
     );
 
     if (!found) {
@@ -631,7 +631,7 @@ export class UserService {
     }
 
     const [existFollow] = await conn.query(
-      `SELECT FOLLOW_YN AS follow_yn FROM FOLLOW WHERE USER_ID='${user_id}' AND FOLLOWING_USER_ID='${follow_user_id}'`,
+      `SELECT FOLLOW_YN AS follow_yn FROM FOLLOW WHERE USER_ID='${user_id}' AND FOLLOWING_USER_ID='${follow_user_id}';`,
     );
 
     if (existFollow) {
@@ -644,7 +644,7 @@ export class UserService {
       }
       await conn.query(
         `UPDATE FOLLOW SET FOLLOW_YN='${follow_yn}', UPDATE_DT=NOW(), UPDATE_ID='${user_id}'
-         WHERE USER_ID='${user_id}' AND FOLLOWING_USER_ID='${follow_user_id}'`,
+         WHERE USER_ID='${user_id}' AND FOLLOWING_USER_ID='${follow_user_id}';`,
       );
 
       if (existFollow.follow_yn === 'Y') {
@@ -664,7 +664,7 @@ export class UserService {
       }
     }
     const sql = `INSERT INTO FOLLOW(USER_ID, FOLLOWING_USER_ID, INSERT_DT, INSERT_ID)
-                 VALUES(?,?,NOW(),?)`;
+                 VALUES(?,?,NOW(),?);`;
     const params = [user_id, follow_user_id, user_id];
 
     await conn.query(sql, params);
@@ -688,7 +688,7 @@ export class UserService {
        LEFT JOIN PRODUCT ON FOLLOW.FOLLOWING_USER_ID = PRODUCT.USER_ID AND DATE(PRODUCT.INSERT_DT) 
        BETWEEN DATE_ADD(CURDATE(), INTERVAL -1 DAY) AND CURRENT_DATE() AND USE_YN='Y'
        WHERE FOLLOW.USER_ID='${user_id}' AND FOLLOW.FOLLOW_YN='Y' GROUP BY following_user_id 
-       ORDER BY name ASC`,
+       ORDER BY name ASC;`,
     );
 
     if (count && following) {
@@ -710,13 +710,13 @@ export class UserService {
 
     try {
       const found = await conn.query(`
-      SELECT user_id, RANK() OVER (ORDER BY sold_count DESC, star_count DESC) AS ranking, name, CAST(star_count AS CHAR) AS start_count, follower_count, 
+      SELECT user_id, RANK() OVER (ORDER BY sold_count DESC, star_count DESC) AS ranking, hashtag, name, CAST(star_count AS CHAR) AS start_count, follower_count, 
       sold_count, profile_img FROM(SELECT USER.USER_ID AS user_id, 
       (SELECT AVG(STAR_COUNT) FROM REVIEW WHERE PRODUCT.USER_ID=REVIEW.PRODUCT_USER_ID AND REVIEW.USE_YN='Y') AS star_count,
       (SELECT COUNT(FOLLOW_ID) FROM FOLLOW WHERE PRODUCT.USER_ID=FOLLOW.FOLLOWING_USER_ID AND FOLLOW.FOLLOW_YN='Y') AS follower_count, 
-      COUNT(*) AS sold_count, USER.NAME AS name, USER.PROFILE_IMG AS profile_img  
-      FROM PRODUCT INNER JOIN USER ON PRODUCT.USER_ID = USER.USER_ID AND PRODUCT.USE_YN='Y' AND USER.STATUS='P' AND PRODUCT.PRODUCT_ST='05' 
-      WHERE DATE(PRODUCT.INSERT_DT) BETWEEN LAST_DAY(NOW() - interval 1 MONTH) + interval 1 DAY AND LAST_DAY(NOW()) GROUP BY user_id)AS counts`);
+      COUNT(*) AS sold_count, USER.NAME AS name, USER.HASHTAG AS hashtag, USER.PROFILE_IMG AS profile_img  
+      FROM PRODUCT INNER JOIN USER ON PRODUCT.USER_ID = USER.USER_ID AND PRODUCT.USE_YN='Y' AND USER.STATUS='P' AND PRODUCT.PRODUCT_ST='500' 
+      WHERE DATE(PRODUCT.INSERT_DT) BETWEEN LAST_DAY(NOW() - interval 1 MONTH) + interval 1 DAY AND LAST_DAY(NOW()) GROUP BY user_id)AS counts;`);
 
       this.logger.verbose(`이달의 탑 셀러 조회 성공`);
       return {
@@ -764,7 +764,7 @@ export class UserService {
       const [found] = await conn.query(
         `SELECT USER_ID AS user_id FROM FOLLOW 
          WHERE USER_ID='${user_id}' AND FOLLOWING_USER_ID='${follow_user_id}'
-         AND FOLLOW_YN='Y'`,
+         AND FOLLOW_YN='Y';`,
       );
       if (!found) {
         return 'notFollow';
@@ -783,7 +783,7 @@ export class UserService {
     try {
       await conn.query(
         `UPDATE USER SET REFRESH_TOKEN=NULL, UPDATE_DT=NOW(), UPDATE_ID='${user_id}' 
-         WHERE USER_ID='${user_id}' AND status='P'`,
+         WHERE USER_ID='${user_id}' AND status='P';`,
       );
 
       this.logger.verbose(`User ${user_id} 회원 로그아웃 성공`);
@@ -804,7 +804,7 @@ export class UserService {
       await conn.query(
         `UPDATE USER SET STATUS='D', NAME=NULL, PHONE_NUM=NULL, EMAIL=NULL, 
          UPDATE_DT=NOW(), UPDATE_ID='${user_id}', PROFILE_IMG=NULL, REFRESH_TOKEN=NULL 
-         WHERE USER_ID='${user_id}' AND STATUS='P'`,
+         WHERE USER_ID='${user_id}' AND STATUS='P';`,
       );
 
       this.logger.verbose(`User ${user_id} 회원 탈퇴 성공`);

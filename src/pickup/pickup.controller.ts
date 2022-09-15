@@ -76,7 +76,7 @@ export class PickupController {
   //픽업 신청 조회
   @Get('request/select')
   @ApiOperation({
-    summary: '픽업 신청 조회 API(1차 완료)',
+    summary: '픽업 신청 조회 API(진행중)',
     description: '픽업 신청 조회 입니다. 토큰 값 필수!',
   })
   @ApiOkResponse({

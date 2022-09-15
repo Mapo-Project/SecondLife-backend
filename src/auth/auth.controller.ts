@@ -36,7 +36,7 @@ export class AuthController {
 
   @Get('login')
   @ApiOperation({
-    summary: '로그인 페이지(테스트용)',
+    summary: '로그인 페이지(테스트)',
     description: `로그인 페이지 주소 입니다.  
     
     https://cozy-rabanadas-e9e588.netlify.app`,

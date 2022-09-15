@@ -578,7 +578,7 @@ export class UserController {
   }
 
   //회원 로그아웃
-  @Post('/logout')
+  @Post('logout')
   @ApiOperation({
     summary: '회원 로그아웃 API(완료)',
     description: '회원 로그아웃 입니다. 토큰 값 필수!',
@@ -602,7 +602,7 @@ export class UserController {
   }
 
   //회원 탈퇴
-  @Delete('/withdrawal')
+  @Delete('withdrawal')
   @ApiOperation({
     summary: '회원 탈퇴 API(완료)',
     description: '회원 탈퇴 입니다. 토큰 값 필수!',

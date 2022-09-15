@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { IsDateString, IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
 //픽업 신청 Input 데이터
 export class PickupRequestInputDto {
@@ -28,15 +28,16 @@ export class PickupRequestInputDto {
   @IsNumber()
   green_bag_l: number;
 
-  @ApiProperty({ example: '01', description: '그린백 정리 방법(공통코드)' })
+  @ApiProperty({ example: '100', description: '그린백 정리 방법(공통코드)' })
   @IsNotEmpty()
   method_org: string;
 
-  @ApiProperty({ example: '7월 14일', description: '픽업 날짜' })
+  @ApiProperty({ example: '2022-07-14', description: '픽업 날짜' })
   @IsNotEmpty()
+  @IsDateString()
   pick_up_dt: string;
 
-  @ApiProperty({ example: '01', description: '그린백 픽업 시간(공통코드)' })
+  @ApiProperty({ example: '100', description: '그린백 픽업 시간(공통코드)' })
   @IsNotEmpty()
   pick_up_tm: string;
 

@@ -87,7 +87,7 @@ export class PickupService {
 
     try {
       const found = await conn.query(
-        `SELECT * FROM PICK_UP WHERE USER_ID='${user_id}' AND USE_YN='Y'`,
+        `SELECT * FROM PICK_UP WHERE USER_ID='${user_id}' AND USE_YN='Y';`,
       );
 
       this.logger.verbose(`User ${user_id} 픽업 신청 조회 성공`);
@@ -109,7 +109,7 @@ export class PickupService {
     const { address } = pickupPlaceRegistrationInputDto;
     const conn = getConnection();
     const sql = `INSERT INTO PICK_UP_LOC(USER_ID, ADDRESS, INSERT_DT, INSERT_ID)
-                 VALUES(?,?,NOW(),?)`;
+                 VALUES(?,?,NOW(),?);`;
     const params = [user_id, address, user_id];
 
     try {
@@ -132,7 +132,7 @@ export class PickupService {
     try {
       const found = await conn.query(
         `SELECT PICK_UP_LOC_ID AS pick_up_loc_id, ADDRESS AS address FROM PICK_UP_LOC 
-         WHERE USER_ID='${user_id}' AND USE_YN='Y' ORDER BY INSERT_DT DESC LIMIT 3`,
+         WHERE USER_ID='${user_id}' AND USE_YN='Y' ORDER BY INSERT_DT DESC LIMIT 3;`,
       );
 
       this.logger.verbose(`User ${user_id} 픽업 장소 조회 성공`);
@@ -155,7 +155,7 @@ export class PickupService {
     const conn = getConnection();
 
     const [found] = await conn.query(
-      `SELECT PICK_UP_LOC_ID FROM PICK_UP_LOC WHERE PICK_UP_LOC_ID='${pick_up_loc_id}' AND USE_YN='Y'`,
+      `SELECT PICK_UP_LOC_ID FROM PICK_UP_LOC WHERE PICK_UP_LOC_ID='${pick_up_loc_id}' AND USE_YN='Y';`,
     );
 
     if (!found) {
@@ -166,7 +166,7 @@ export class PickupService {
     try {
       await conn.query(
         `UPDATE PICK_UP_LOC SET USE_YN='N', UPDATE_DT=NOW(), UPDATE_ID='${user_id}'
-         WHERE PICK_UP_LOC_ID='${pick_up_loc_id}' AND USE_YN='Y'`,
+         WHERE PICK_UP_LOC_ID='${pick_up_loc_id}' AND USE_YN='Y';`,
       );
 
       this.logger.verbose(`User ${user_id} 픽업 장소 삭제 성공`);

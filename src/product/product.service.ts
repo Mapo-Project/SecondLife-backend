@@ -30,7 +30,7 @@ export class ProductService {
     const found = await conn.query(
       `SELECT PRODUCT.PRODUCT_ID AS product_id, SIZE AS size, PRICE AS price, PRODUCT_IMG AS product_img 
        FROM FOLLOW LEFT JOIN PRODUCT ON FOLLOW.FOLLOWING_USER_ID = PRODUCT.USER_ID 
-       WHERE FOLLOW.USER_ID='${user_id}' AND FOLLOW.FOLLOW_YN='Y' ORDER BY PRODUCT.INSERT_DT DESC LIMIT 6`,
+       WHERE FOLLOW.USER_ID='${user_id}' AND FOLLOW.FOLLOW_YN='Y' ORDER BY PRODUCT.INSERT_DT DESC LIMIT 6;`,
     );
 
     if (found.length !== 0) {
@@ -55,7 +55,7 @@ export class ProductService {
       `SELECT PRODUCT.PRODUCT_ID AS product_id, COUNT(PRODUCT.PRODUCT_ID) AS wish_count, SIZE AS size, PRICE AS price, PRODUCT_IMG AS product_img 
        FROM PRODUCT LEFT JOIN WISH_LIST ON PRODUCT.PRODUCT_ID = WISH_LIST.PRODUCT_ID 
        WHERE WISH_LIST.WISH_YN='Y' AND DATE(PRODUCT.INSERT_DT) BETWEEN SUBDATE(CURDATE(),date_format(CURDATE(),'%w')-0) 
-       AND SUBDATE(CURDATE(),date_format(CURDATE(),'%w')-6) GROUP BY PRODUCT.PRODUCT_ID ORDER BY wish_count DESC, PRODUCT.TITLE ASC LIMIT 6`,
+       AND SUBDATE(CURDATE(),date_format(CURDATE(),'%w')-6) GROUP BY PRODUCT.PRODUCT_ID ORDER BY wish_count DESC, PRODUCT.TITLE ASC LIMIT 6;`,
     );
 
     if (found) {
@@ -76,7 +76,7 @@ export class ProductService {
 
     const found = await conn.query(
       `SELECT PRODUCT_ID AS product_id, SIZE AS size, PRICE AS price, PRODUCT_IMG AS product_img FROM PRODUCT 
-      WHERE USE_YN='Y' ORDER BY INSERT_DT DESC LIMIT 14 `,
+      WHERE USE_YN='Y' ORDER BY INSERT_DT DESC LIMIT 14;`,
     );
 
     if (found.length !== 0) {
@@ -100,7 +100,7 @@ export class ProductService {
     const conn = getConnection();
 
     const [found] = await conn.query(
-      `SELECT USER_ID AS user_id FROM PRODUCT WHERE PRODUCT_ID='${product_id}' AND USE_YN='Y'`,
+      `SELECT USER_ID AS user_id FROM PRODUCT WHERE PRODUCT_ID='${product_id}' AND USE_YN='Y';`,
     );
 
     if (!found) {
@@ -119,7 +119,7 @@ export class ProductService {
     }
 
     const [existWish] = await conn.query(
-      `SELECT WISH_YN AS wish_yn FROM WISH_LIST WHERE USER_ID='${user_id}' AND PRODUCT_ID='${product_id}'`,
+      `SELECT WISH_YN AS wish_yn FROM WISH_LIST WHERE USER_ID='${user_id}' AND PRODUCT_ID='${product_id}';`,
     );
 
     if (existWish) {
@@ -132,7 +132,7 @@ export class ProductService {
       }
       await conn.query(
         `UPDATE WISH_LIST SET WISH_YN='${wish_yn}', UPDATE_DT=NOW(), UPDATE_ID='${user_id}'
-         WHERE USER_ID='${user_id}' AND PRODUCT_ID='${product_id}'`,
+         WHERE USER_ID='${user_id}' AND PRODUCT_ID='${product_id}';`,
       );
 
       if (existWish.wish_yn === 'Y') {
@@ -152,7 +152,7 @@ export class ProductService {
       }
     }
     const sql = `INSERT INTO WISH_LIST(USER_ID, PRODUCT_ID, INSERT_DT, INSERT_ID)
-                 VALUES(?,?,NOW(),?)`;
+                 VALUES(?,?,NOW(),?);`;
     const params = [user_id, product_id, user_id];
 
     await conn.query(sql, params);
@@ -168,12 +168,12 @@ export class ProductService {
   async getProductWish(user_id: string): Promise<ProductWishSelectOutputDto> {
     const conn = getConnection();
     const [count] = await conn.query(
-      `SELECT COUNT(WISH_ID) AS count FROM WISH_LIST WHERE USER_ID='${user_id}' AND WISH_YN='Y'`,
+      `SELECT COUNT(WISH_ID) AS count FROM WISH_LIST WHERE USER_ID='${user_id}' AND WISH_YN='Y';`,
     );
     const wish = await conn.query(
       `SELECT WISH_LIST.PRODUCT_ID AS product_id, PRODUCT_IMG AS product_img FROM WISH_LIST INNER JOIN PRODUCT
        ON WISH_LIST.PRODUCT_ID = PRODUCT.PRODUCT_ID
-       WHERE WISH_LIST.USER_ID='${user_id}' AND WISH_LIST.WISH_YN='Y'`,
+       WHERE WISH_LIST.USER_ID='${user_id}' AND WISH_LIST.WISH_YN='Y';`,
     );
 
     if (count && wish.length !== 0) {
@@ -200,7 +200,7 @@ export class ProductService {
       const conn = getConnection();
 
       const sql = `INSERT INTO PRODUCT(USER_ID, TITLE, CONTENT, SIZE, PRICE, INSERT_DT, INSERT_ID, PRODUCT_IMG) 
-                  VALUES(?,?,?,?,?,NOW(),?,?)`;
+                  VALUES(?,?,?,?,?,NOW(),?,?);`;
       const params = [
         user_id,
         tile,
